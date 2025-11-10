@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: smart_spend_db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-smart_spend}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smart_spend_password}
+      POSTGRES_DB: ${POSTGRES_DB:-smart_spend}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smart_spend"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smart_spend_network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: smart_spend_app
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-smart_spend}:${POSTGRES_PASSWORD:-smart_spend_password}@db:5432/${POSTGRES_DB:-smart_spend}
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:8000
+      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - smart_spend_network
+
+volumes:
+  postgres_data:
+
+networks:
+  smart_spend_network:
+    driver: bridge
