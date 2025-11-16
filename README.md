@@ -67,6 +67,8 @@ make docker-clean    # Остановить и удалить все (конте
 
 **Или напрямую через docker compose:**
 
+> **Примечание:** Используйте `docker compose` (без дефиса) - это встроенная команда Docker CLI. Старая команда `docker-compose` (с дефисом) может быть не установлена.
+
 ```bash
 docker compose up -d              # Запустить в фоне
 docker compose up                 # Запустить с выводом логов
@@ -92,6 +94,237 @@ poetry run start  # Production режим
 ```
 
 Приложение будет доступно по адресу: http://localhost:8000
+
+## Проверка подключения к базе данных
+
+### Проверка статуса PostgreSQL в Docker:
+
+```bash
+# Проверить статус контейнера БД
+docker compose ps db
+
+# Проверить логи контейнера БД
+docker compose logs db
+
+# Проверить healthcheck контейнера (используйте POSTGRES_USER из .env)
+docker compose exec db pg_isready -U ${POSTGRES_USER}
+```
+
+### Подключение к базе данных через psql:
+
+**В Docker:**
+
+```bash
+# Подключиться к PostgreSQL в контейнере (используйте значения из .env)
+docker compose exec db psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}
+
+# Выполнить SQL запрос напрямую
+docker compose exec db psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c "SELECT version();"
+
+# Показать список баз данных
+docker compose exec db psql -U ${POSTGRES_USER} -c "\l"
+
+# Показать список таблиц
+docker compose exec db psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c "\dt"
+```
+
+### Подключение к базе данных через dBeaver:
+
+**Важно:** Убедитесь, что контейнер с базой данных запущен (`docker compose up -d db` или `make docker-up`).
+
+**Шаги подключения:**
+
+1. Откройте dBeaver
+2. Нажмите на кнопку "Новое подключение" (New Database Connection) или `Cmd+N` (macOS) / `Ctrl+N` (Windows/Linux)
+3. Выберите **PostgreSQL** из списка баз данных
+4. Заполните параметры подключения (значения из вашего `.env` файла):
+   - **Host:** `localhost`
+   - **Port:** `5432`
+   - **Database:** значение `POSTGRES_DB` из `.env`
+   - **Username:** значение `POSTGRES_USER` из `.env`
+   - **Password:** значение `POSTGRES_PASSWORD` из `.env`
+5. Нажмите "Тест подключения" (Test Connection) для проверки
+6. Если тест успешен, нажмите "Готово" (Finish)
+
+**Примечания:**
+
+- Порт `5432` проброшен из Docker контейнера на хост (см. `docker-compose.yml`)
+- Если подключение не удается, убедитесь, что контейнер БД запущен: `docker compose ps db`
+- Для просмотра логов БД: `docker compose logs db`
+
+### Устранение проблем:
+
+**Если контейнер БД не запускается:**
+
+```bash
+# Перезапустить контейнер БД
+docker compose restart db
+
+# Просмотреть детальные логи
+docker compose logs -f db
+```
+
+**Если нужно пересоздать базу данных:**
+
+```bash
+# Остановить и удалить контейнеры с volumes
+docker compose down -v
+
+# Запустить заново
+docker compose up -d db
+make docker-migrate
+```
+
+**Проверка переменных окружения:**
+
+```bash
+# Проверить DATABASE_URL в контейнере приложения
+docker compose exec app env | grep DATABASE_URL
+```
+
+## Учетные данные и переменные окружения
+
+### Где хранятся учетные данные
+
+Учетные данные (креды) хранятся в нескольких местах с приоритетом:
+
+1. **Переменные окружения системы** (наивысший приоритет)
+2. **Файл `.env`** в корне проекта (если создан)
+3. **Значения по умолчанию** в коде (низший приоритет)
+
+### Все учетные данные проекта
+
+#### База данных PostgreSQL
+
+**Все учетные данные должны быть установлены через переменные окружения в файле `.env`:**
+
+- **POSTGRES_USER:** имя пользователя PostgreSQL (обязательно)
+- **POSTGRES_PASSWORD:** пароль пользователя PostgreSQL (обязательно)
+- **POSTGRES_DB:** имя базы данных (обязательно)
+- **DATABASE_URL:** полный URL подключения в формате `postgresql://user:password@host:port/database` (обязательно)
+- **Host:** `db` (внутри Docker сети) или `localhost` (с хоста)
+- **Port:** `5432`
+
+#### Другие переменные окружения
+
+- **SECRET_KEY:** секретный ключ для JWT токенов (обязательно, минимум 32 символа)
+- **CORS_ORIGINS:** разрешенные источники для CORS, разделенные запятыми (по умолчанию: `http://localhost:3000,http://localhost:8000`)
+
+### Как пробрасываются переменные
+
+#### В Docker Compose
+
+В `docker-compose.yml` используются переменные окружения из `.env` файла:
+
+```yaml
+# Контейнер БД
+environment:
+  POSTGRES_USER: ${POSTGRES_USER}      # Обязательно из .env
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # Обязательно из .env
+  POSTGRES_DB: ${POSTGRES_DB}          # Обязательно из .env
+
+# Контейнер приложения
+environment:
+  DATABASE_URL: ${DATABASE_URL}        # Обязательно из .env
+  SECRET_KEY: ${SECRET_KEY}            # Обязательно из .env
+```
+
+**Важно:** Все обязательные переменные должны быть установлены в файле `.env` перед запуском!
+
+#### В приложении (config.py)
+
+В `app/core/config.py` используется `pydantic-settings` с валидацией:
+
+```python
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",  # Читает из .env файла
+        case_sensitive=True,
+    )
+
+    DATABASE_URL: str = Field(...)  # Обязательное поле из .env
+    SECRET_KEY: str = Field(...)    # Обязательное поле из .env (минимум 32 символа)
+```
+
+**Порядок приоритета:**
+
+1. Переменная окружения системы
+2. Переменная из `.env` файла
+3. Приложение не запустится без обязательных переменных (DATABASE_URL, SECRET_KEY)
+
+### Как переопределить учетные данные
+
+#### Вариант 1: Создать файл `.env`
+
+Создайте файл `.env` в корне проекта на основе `.env.example`:
+
+```bash
+# Скопируйте шаблон
+cp .env.example .env
+
+# Отредактируйте .env и установите реальные значения:
+# POSTGRES_USER=your_actual_user
+# POSTGRES_PASSWORD=your_secure_password_here
+# POSTGRES_DB=your_database_name
+# DATABASE_URL=postgresql://your_user:your_password@localhost:5432/your_database
+# SECRET_KEY=your-super-secret-key-min-32-chars-long
+# CORS_ORIGINS=http://localhost:3000,http://localhost:8000
+```
+
+**Важно:** Файл `.env` должен быть в `.gitignore` и не коммититься в репозиторий!
+
+#### Вариант 2: Переменные окружения системы
+
+Установите переменные перед запуском:
+
+```bash
+# macOS/Linux
+export POSTGRES_USER=your_user
+export POSTGRES_PASSWORD=your_password
+export POSTGRES_DB=your_database
+export DATABASE_URL=postgresql://your_user:your_password@localhost:5432/your_database
+export SECRET_KEY=your-secret-key-min-32-chars
+
+# Windows PowerShell
+$env:POSTGRES_USER="your_user"
+$env:POSTGRES_PASSWORD="your_password"
+$env:POSTGRES_DB="your_database"
+$env:DATABASE_URL="postgresql://your_user:your_password@localhost:5432/your_database"
+$env:SECRET_KEY="your-secret-key-min-32-chars"
+```
+
+#### Вариант 3: Передать в docker-compose
+
+```bash
+POSTGRES_USER=your_user POSTGRES_PASSWORD=your_password POSTGRES_DB=your_db \
+DATABASE_URL=postgresql://your_user:your_password@db:5432/your_db \
+SECRET_KEY=your-secret-key-min-32-chars docker compose up
+```
+
+### Файл `.env.example`
+
+В проекте уже есть файл `.env.example` с шаблоном всех необходимых переменных окружения.
+
+**Важно:**
+
+- Скопируйте `.env.example` в `.env` перед первым запуском
+- Замените все placeholder значения на реальные
+- Файл `.env` находится в `.gitignore` и не должен коммититься в репозиторий
+
+### Проверка текущих значений
+
+```bash
+# Проверить переменные в Docker контейнере БД
+docker compose exec db env | grep POSTGRES
+
+# Проверить переменные в Docker контейнере приложения
+docker compose exec app env | grep -E "DATABASE_URL|SECRET_KEY|CORS"
+
+# Проверить переменные локально (если запущено без Docker)
+env | grep -E "DATABASE_URL|SECRET_KEY|POSTGRES"
+
+# Важно: Убедитесь, что SECRET_KEY и пароли не выводятся в логи или не сохраняются в истории команд!
+```
 
 ## Документация API
 

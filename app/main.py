@@ -14,7 +14,14 @@ from app.modules.analytics.router import router as analytics_router
 async def lifespan(app: FastAPI):
     """Инициализация при старте приложения"""
     # Инициализация БД
-    init_db()
+    try:
+        init_db()
+    except Exception as e:
+        # Логируем ошибку, но не падаем при старте
+        # БД может быть недоступна при первом запуске
+        import logging
+
+        logging.warning(f"Не удалось инициализировать БД при старте: {e}")
     yield
     # Очистка при завершении (если нужно)
 

@@ -40,6 +40,8 @@ poetry.lock
 .env
 .env.local
 .env.*.local
+# Но .env.example должен коммититься в репозиторий
+!.env.example
 
 # Database
 *.db
