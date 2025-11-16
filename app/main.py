@@ -4,7 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.core_module import init_db
-from app.modules.transactions.router import router as transactions_router
 from app.modules.users.router import router as users_router
 from app.modules.groups.router import router as groups_router
 from app.modules.analytics.router import router as analytics_router
@@ -43,7 +42,6 @@ app.add_middleware(
 )
 
 # Подключение роутов модулей
-app.include_router(transactions_router, prefix=settings.API_V1_STR)
 app.include_router(users_router, prefix=settings.API_V1_STR)
 app.include_router(groups_router, prefix=settings.API_V1_STR)
 app.include_router(analytics_router, prefix=settings.API_V1_STR)

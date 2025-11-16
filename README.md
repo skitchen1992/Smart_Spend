@@ -369,8 +369,7 @@ smart_spend/
 │   │   └── analytics/             # Модуль аналитики (TODO)
 │   │
 │   └── tests/                     # Тесты (pytest + httpx)
-│       ├── test_main.py
-│       └── test_transactions.py
+│       └── test_main.py
 │
 ├── alembic/                       # Миграции базы данных
 │   ├── env.py
@@ -504,7 +503,6 @@ poetry run alembic downgrade -1
 
 Все модули имеют базовую структуру, но эндпоинты еще не реализованы:
 
-- `/api/v1/transactions` - Модуль транзакций (TODO)
 - `/api/v1/users` - Модуль пользователей (TODO)
 - `/api/v1/groups` - Модуль групп (TODO)
 - `/api/v1/analytics` - Модуль аналитики (TODO)
