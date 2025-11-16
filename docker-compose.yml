@@ -3,15 +3,15 @@ services:
     image: postgres:15-alpine
     container_name: smart_spend_db
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-smart_spend}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smart_spend_password}
-      POSTGRES_DB: ${POSTGRES_DB:-smart_spend}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U smart_spend"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -28,9 +28,14 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-smart_spend}:${POSTGRES_PASSWORD:-smart_spend_password}@db:5432/${POSTGRES_DB:-smart_spend}
-      - CORS_ORIGINS=http://localhost:3000,http://localhost:8000
-      - SECRET_KEY=${SECRET_KEY:-your-secret-key-change-in-production}
+      - DATABASE_URL=${DATABASE_URL}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:8000}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM:-HS256}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - PROJECT_NAME=${PROJECT_NAME:-Smart Spend}
+      - VERSION=${VERSION:-0.1.0}
+      - API_V1_STR=${API_V1_STR:-/api/v1}
     depends_on:
       db:
         condition: service_healthy

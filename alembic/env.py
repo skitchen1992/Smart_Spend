@@ -26,17 +26,9 @@ config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 # add your model's MetaData object here
 # for 'autogenerate' support
 # Импортируем все модели для автогенерации миграций
-from app.modules.transactions.models import Transaction
-# TODO: Добавить импорты других моделей когда они будут созданы
-# from app.modules.users.models import User
-# from app.modules.groups.models import Group
+from app.modules.users.models import User
 
 target_metadata = Base.metadata
-
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
 
 
 def run_migrations_offline() -> None:
@@ -77,9 +69,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()
@@ -89,4 +79,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-
