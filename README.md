@@ -7,7 +7,10 @@
 ### Для Docker (рекомендуется):
 
 1. Убедитесь, что установлены Docker и Docker Compose
-2. Создайте файл `.env` на основе `.env.example` (опционально, есть значения по умолчанию)
+2. **ОБЯЗАТЕЛЬНО** создайте файл `.env` на основе `.env.example` и установите все необходимые переменные окружения:
+   - `DATABASE_URL` - URL подключения к базе данных
+   - `SECRET_KEY` - секретный ключ для JWT (минимум 32 символа)
+   - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` - для Docker Compose
 3. Запустите через Docker (см. раздел "Запуск")
 
 ### Для локальной разработки:
@@ -24,11 +27,10 @@ curl -sSL https://install.python-poetry.org | python3 -
 poetry install
 ```
 
-3. Создайте файл `.env` на основе `.env.example`:
+3. **ОБЯЗАТЕЛЬНО** создайте файл `.env` на основе `.env.example` и установите все необходимые переменные окружения:
 
-```bash
-cp .env.example .env
-```
+   - `DATABASE_URL` - URL подключения к базе данных
+   - `SECRET_KEY` - секретный ключ для JWT (минимум 32 символа)
 
 4. Активируйте виртуальное окружение:
 
@@ -196,11 +198,11 @@ docker compose exec app env | grep DATABASE_URL
 
 #### База данных PostgreSQL
 
-**Все учетные данные должны быть установлены через переменные окружения в файле `.env`:**
+**Все учетные данные должны быть установлены через переменные окружения в файле `.env` (файл обязателен!):**
 
-- **POSTGRES_USER:** имя пользователя PostgreSQL (обязательно)
-- **POSTGRES_PASSWORD:** пароль пользователя PostgreSQL (обязательно)
-- **POSTGRES_DB:** имя базы данных (обязательно)
+- **POSTGRES_USER:** имя пользователя PostgreSQL (обязательно для Docker)
+- **POSTGRES_PASSWORD:** пароль пользователя PostgreSQL (обязательно для Docker)
+- **POSTGRES_DB:** имя базы данных (обязательно для Docker)
 - **DATABASE_URL:** полный URL подключения в формате `postgresql://user:password@host:port/database` (обязательно)
 - **Host:** `db` (внутри Docker сети) или `localhost` (с хоста)
 - **Port:** `5432`
@@ -219,17 +221,17 @@ docker compose exec app env | grep DATABASE_URL
 ```yaml
 # Контейнер БД
 environment:
-  POSTGRES_USER: ${POSTGRES_USER}      # Обязательно из .env
-  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # Обязательно из .env
-  POSTGRES_DB: ${POSTGRES_DB}          # Обязательно из .env
+  POSTGRES_USER: ${POSTGRES_USER}      # Из .env файла
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # Из .env файла
+  POSTGRES_DB: ${POSTGRES_DB}          # Из .env файла
 
 # Контейнер приложения
 environment:
-  DATABASE_URL: ${DATABASE_URL}        # Обязательно из .env
-  SECRET_KEY: ${SECRET_KEY}            # Обязательно из .env
+  DATABASE_URL: ${DATABASE_URL}        # Из .env файла
+  SECRET_KEY: ${SECRET_KEY}            # Из .env файла
 ```
 
-**Важно:** Все обязательные переменные должны быть установлены в файле `.env` перед запуском!
+**Важно:** Файл `.env` обязателен! Приложение не запустится без него. Все обязательные переменные должны быть установлены в файле `.env` перед запуском!
 
 #### В приложении (config.py)
 
@@ -238,19 +240,21 @@ environment:
 ```python
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",  # Читает из .env файла
+        env_file=".env",  # ОБЯЗАТЕЛЬНО: файл .env должен существовать
+        env_file_encoding="utf-8",
+        env_ignore_empty=True,
         case_sensitive=True,
     )
 
-    DATABASE_URL: str = Field(...)  # Обязательное поле из .env
-    SECRET_KEY: str = Field(...)    # Обязательное поле из .env (минимум 32 символа)
+    DATABASE_URL: str = Field(...)  # Обязательное поле из .env файла
+    SECRET_KEY: str = Field(...)    # Обязательное поле из .env файла (минимум 32 символа)
 ```
 
-**Порядок приоритета:**
+**Проверка наличия .env файла:**
 
-1. Переменная окружения системы
-2. Переменная из `.env` файла
-3. Приложение не запустится без обязательных переменных (DATABASE_URL, SECRET_KEY)
+Приложение проверяет наличие файла `.env` при запуске и выдаст ошибку `FileNotFoundError`, если файл отсутствует.
+
+**Важно:** Файл `.env` обязателен! Приложение не запустится без него.
 
 ### Как переопределить учетные данные
 
@@ -303,13 +307,13 @@ SECRET_KEY=your-secret-key-min-32-chars docker compose up
 
 ### Файл `.env.example`
 
-В проекте уже есть файл `.env.example` с шаблоном всех необходимых переменных окружения.
+В проекте есть файл `.env.example` с шаблоном всех необходимых переменных окружения.
 
 **Важно:**
 
-- Скопируйте `.env.example` в `.env` перед первым запуском
+- **Файл `.env` обязателен!** Скопируйте `.env.example` в `.env` перед первым запуском
 - Замените все placeholder значения на реальные
-- Файл `.env` находится в `.gitignore` и не должен коммититься в репозиторий
+- Файл `.env` должен быть в `.gitignore` и не коммититься в репозиторий
 
 ### Проверка текущих значений
 
