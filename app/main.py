@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.core_module import init_db
+from app.core.db import engine
 from app.modules.users.router import router as users_router
 from app.modules.groups.router import router as groups_router
 from app.modules.analytics.router import router as analytics_router
@@ -14,7 +15,7 @@ async def lifespan(app: FastAPI):
     """Инициализация при старте приложения"""
     # Инициализация БД
     try:
-        init_db()
+        await init_db()
     except Exception as e:
         # Логируем ошибку, но не падаем при старте
         # БД может быть недоступна при первом запуске
@@ -22,7 +23,8 @@ async def lifespan(app: FastAPI):
 
         logging.warning(f"Не удалось инициализировать БД при старте: {e}")
     yield
-    # Очистка при завершении (если нужно)
+    # Очистка при завершении
+    await engine.dispose()
 
 
 app = FastAPI(

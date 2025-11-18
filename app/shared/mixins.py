@@ -2,47 +2,51 @@
 Повторно используемые классы и миксины
 """
 from typing import TypeVar, Generic
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from app.shared.base_model import BaseModel
 
 ModelType = TypeVar("ModelType", bound=BaseModel)
 
 
 class CRUDMixin(Generic[ModelType]):
-    """Базовый CRUD миксин для репозиториев"""
+    """Базовый CRUD миксин для репозиториев (асинхронный)"""
     
     def __init__(self, model: type[ModelType]):
         self.model = model
     
-    def get(self, db: Session, id: int) -> ModelType | None:
+    async def get(self, db: AsyncSession, id: int) -> ModelType | None:
         """Получить по ID"""
-        return db.query(self.model).filter(self.model.id == id).first()
+        result = await db.execute(select(self.model).filter(self.model.id == id))
+        return result.scalar_one_or_none()
     
-    def get_multi(self, db: Session, skip: int = 0, limit: int = 100) -> list[ModelType]:
+    async def get_multi(self, db: AsyncSession, skip: int = 0, limit: int = 100) -> list[ModelType]:
         """Получить список с пагинацией"""
-        return db.query(self.model).offset(skip).limit(limit).all()
+        result = await db.execute(select(self.model).offset(skip).limit(limit))
+        return list(result.scalars().all())
     
-    def create(self, db: Session, obj_in: dict) -> ModelType:
+    async def create(self, db: AsyncSession, obj_in: dict) -> ModelType:
         """Создать новый объект"""
         db_obj = self.model(**obj_in)
         db.add(db_obj)
-        db.commit()
-        db.refresh(db_obj)
+        await db.flush()  # Flush для получения ID, commit делается в get_db()
+        await db.refresh(db_obj)
         return db_obj
     
-    def update(self, db: Session, db_obj: ModelType, obj_in: dict) -> ModelType:
+    async def update(self, db: AsyncSession, db_obj: ModelType, obj_in: dict) -> ModelType:
         """Обновить объект"""
         for field, value in obj_in.items():
             setattr(db_obj, field, value)
-        db.commit()
-        db.refresh(db_obj)
+        await db.flush()  # Flush для применения изменений, commit делается в get_db()
+        await db.refresh(db_obj)
         return db_obj
     
-    def delete(self, db: Session, id: int) -> ModelType | None:
+    async def delete(self, db: AsyncSession, id: int) -> ModelType | None:
         """Удалить объект"""
-        obj = db.query(self.model).filter(self.model.id == id).first()
+        result = await db.execute(select(self.model).filter(self.model.id == id))
+        obj = result.scalar_one_or_none()
         if obj:
-            db.delete(obj)
-            db.commit()
+            db.delete(obj)  # delete - синхронный метод, но работает в async контексте
+            await db.flush()  # Flush для применения изменений, commit делается в get_db()
         return obj
 
