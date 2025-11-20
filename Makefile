@@ -68,9 +68,19 @@ db-reset: ## Сбросить БД и применить миграции зан
 
 # Docker команды
 docker-build: ## Собрать Docker образ
+	@if [ ! -f .env ]; then \
+		echo "Ошибка: файл .env не найден!"; \
+		echo "Создайте файл .env перед запуском Docker."; \
+		exit 1; \
+	fi
 	docker compose build
 
 docker-up: ## Запустить контейнеры
+	@if [ ! -f .env ]; then \
+		echo "Ошибка: файл .env не найден!"; \
+		echo "Создайте файл .env перед запуском Docker."; \
+		exit 1; \
+	fi
 	docker compose up -d
 
 docker-down: ## Остановить контейнеры
@@ -80,6 +90,11 @@ docker-logs: ## Показать логи контейнеров
 	docker compose logs -f
 
 docker-restart: ## Перезапустить контейнеры
+	@if [ ! -f .env ]; then \
+		echo "Ошибка: файл .env не найден!"; \
+		echo "Создайте файл .env перед запуском Docker."; \
+		exit 1; \
+	fi
 	docker compose restart
 
 docker-shell: ## Войти в контейнер приложения
