@@ -8,7 +8,7 @@ from app.shared.mixins import CRUDMixin
 class UserRepository(CRUDMixin[User]):
     """Репозиторий для работы с пользователями"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(User)
 
     async def get_by_username(self, db: AsyncSession, username: str) -> User | None:
