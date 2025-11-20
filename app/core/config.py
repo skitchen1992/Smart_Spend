@@ -25,20 +25,33 @@ class Settings(BaseSettings):
 
     # База данных (ОБЯЗАТЕЛЬНО установите через переменную окружения в .env!)
     DATABASE_URL: str = Field(
-        default="",
+        ...,
         description="URL подключения к базе данных. Должно быть установлено через DATABASE_URL в .env файле",
     )
 
-    @field_validator("DATABASE_URL")
+    @field_validator("DATABASE_URL", mode="before")
     @classmethod
-    def validate_database_url(cls, v: str) -> str:
-        """Проверка что DATABASE_URL установлен"""
+    def validate_database_url(cls, v: Any) -> str:
+        """Проверка что DATABASE_URL установлен и имеет корректный формат"""
+        # Преобразуем в строку, если это не строка
+        if not isinstance(v, str):
+            v = str(v) if v is not None else ""
+
         if not v or v.strip() == "":
             raise ValueError(
                 "DATABASE_URL не установлен! Пожалуйста, установите переменную окружения DATABASE_URL "
                 "в файле .env"
             )
-        return v
+        v_str = v.strip()
+
+        # Проверяем что URL начинается с postgresql+asyncpg://
+        if not v_str.startswith("postgresql+asyncpg://"):
+            raise ValueError(
+                f"DATABASE_URL должен начинаться с 'postgresql+asyncpg://' для использования асинхронного драйвера asyncpg. "
+                f"Получено: {v_str[:50]}...\n"
+                f"Пример правильного формата: postgresql+asyncpg://user:password@host:port/database"
+            )
+        return str(v_str)  # type: ignore[no-any-return]
 
     # CORS
     CORS_ORIGINS: Union[str, List[str]] = "http://localhost:3000,http://localhost:8000"
@@ -90,7 +103,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
 
-def _check_env_file_exists():
+def _check_env_file_exists() -> None:
     """Проверка наличия обязательного файла .env"""
     # Определяем путь к .env файлу относительно корня проекта
     # Ищем корень проекта (где находится pyproject.toml или README.md)
@@ -108,4 +121,4 @@ def _check_env_file_exists():
 # Проверяем наличие .env файла перед созданием настроек
 _check_env_file_exists()
 
-settings = Settings()
+settings = Settings()  # type: ignore[call-arg]

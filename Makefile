@@ -96,4 +96,3 @@ docker-test: ## Запустить тесты в Docker
 
 docker-clean: ## Остановить и удалить контейнеры, volumes и образы
 	docker compose down -v --rmi all
-

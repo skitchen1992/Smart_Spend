@@ -64,4 +64,3 @@ htmlcov/
 
 # Alembic
 alembic/versions/*.pyc
-
