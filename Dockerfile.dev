@@ -14,11 +14,21 @@ RUN pip install --no-cache-dir poetry==1.7.1
 # Настройка Poetry (не создавать виртуальное окружение, использовать системное)
 RUN poetry config virtualenvs.create false
 
+# Настройка pip для работы с таймаутами и повторами через переменные окружения
+ENV PIP_DEFAULT_TIMEOUT=300
+ENV PIP_RETRIES=5
+
+# Настройка Poetry для использования pip с повторами
+RUN poetry config installer.max-workers 10
+
 # Копирование файлов зависимостей
 COPY pyproject.toml poetry.lock* ./
 
-# Установка зависимостей (включая dev)
-RUN poetry install --no-interaction --no-ansi
+# Установка зависимостей (включая dev) с повторами при ошибках сети
+# Используем -v для подробного вывода, чтобы видеть какой пакет скачивается
+RUN poetry install --no-interaction -v || \
+    (sleep 10 && poetry install --no-interaction -v) || \
+    (sleep 20 && poetry install --no-interaction -v)
 
 # Копирование кода приложения
 COPY . .

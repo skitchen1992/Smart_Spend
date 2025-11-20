@@ -110,4 +110,5 @@ docker-test: ## Запустить тесты в Docker
 	docker compose exec app poetry run pytest
 
 docker-clean: ## Остановить и удалить контейнеры, volumes и образы
-	docker compose down -v --rmi all
+	docker compose down -v --rmi local || true
+	docker image prune -f
