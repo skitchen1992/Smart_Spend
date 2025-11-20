@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import field_validator, Field
+from pydantic import field_validator, Field, model_validator
 from typing import List, Union, Any
 import json
 from pathlib import Path
@@ -25,18 +25,31 @@ class Settings(BaseSettings):
 
     # База данных (ОБЯЗАТЕЛЬНО установите через переменную окружения в .env!)
     DATABASE_URL: str = Field(
-        default="",
+        ...,
         description="URL подключения к базе данных. Должно быть установлено через DATABASE_URL в .env файле",
     )
 
-    @field_validator("DATABASE_URL")
+    @field_validator("DATABASE_URL", mode="before")
     @classmethod
-    def validate_database_url(cls, v: str) -> str:
-        """Проверка что DATABASE_URL установлен"""
+    def validate_database_url(cls, v: Any) -> str:
+        """Проверка что DATABASE_URL установлен и имеет корректный формат"""
+        # Преобразуем в строку, если это не строка
+        if not isinstance(v, str):
+            v = str(v) if v is not None else ""
+
         if not v or v.strip() == "":
             raise ValueError(
                 "DATABASE_URL не установлен! Пожалуйста, установите переменную окружения DATABASE_URL "
                 "в файле .env"
+            )
+        v = v.strip()
+
+        # Проверяем что URL начинается с postgresql+asyncpg://
+        if not v.startswith("postgresql+asyncpg://"):
+            raise ValueError(
+                f"DATABASE_URL должен начинаться с 'postgresql+asyncpg://' для использования асинхронного драйвера asyncpg. "
+                f"Получено: {v[:50]}...\n"
+                f"Пример правильного формата: postgresql+asyncpg://user:password@host:port/database"
             )
         return v
 

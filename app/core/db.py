@@ -5,27 +5,9 @@ from typing import AsyncGenerator
 from app.core.config import settings
 
 
-def get_async_database_url(database_url: str) -> str:
-    """Преобразует синхронный PostgreSQL URL в асинхронный"""
-    # Если уже асинхронный - возвращаем как есть
-    if "+asyncpg" in database_url:
-        return database_url
-
-    # PostgreSQL - заменяем на asyncpg
-    if database_url.startswith("postgresql+psycopg2://"):
-        return database_url.replace("postgresql+psycopg2://", "postgresql+asyncpg://", 1)
-    if database_url.startswith("postgresql://"):
-        return database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-
-    # Если формат не распознан - возвращаем как есть
-    return database_url
-
-
 # Создаем async engine
-async_database_url = get_async_database_url(settings.DATABASE_URL)
-
 engine = create_async_engine(
-    async_database_url,
+    settings.DATABASE_URL,
     echo=True,  # Для разработки - показывает SQL запросы
     pool_pre_ping=True,  # Проверка соединения перед использованием (рекомендуется для PostgreSQL)
 )
