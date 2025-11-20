@@ -26,7 +26,6 @@ config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 # add your model's MetaData object here
 # for 'autogenerate' support
 # Импортируем все модели для автогенерации миграций
-from app.modules.users.models import User
 
 target_metadata = Base.metadata
 
