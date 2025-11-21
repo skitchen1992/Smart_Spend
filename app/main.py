@@ -1,11 +1,14 @@
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.core_module import init_db
 from app.core.db import engine
+from app.core.exceptions import AppException
+from app.core.exceptions_handler import app_exception_handler, http_exception_handler
+from app.core.middleware import StandardResponseMiddleware
 from app.modules.users.router import router as users_router
 from app.modules.groups.router import router as groups_router
 from app.modules.analytics.router import router as analytics_router
@@ -35,6 +38,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Middleware для стандартизированного формата ответов (добавляем первым, чтобы выполнялся последним)
+app.add_middleware(StandardResponseMiddleware)
+
 # Настройка CORS
 app.add_middleware(
     CORSMiddleware,
@@ -43,6 +49,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Регистрация обработчиков исключений
+app.add_exception_handler(AppException, app_exception_handler)
+app.add_exception_handler(HTTPException, http_exception_handler)
 
 # Подключение роутов модулей
 app.include_router(users_router, prefix=settings.API_V1_STR)
