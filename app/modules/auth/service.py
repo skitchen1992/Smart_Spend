@@ -99,5 +99,24 @@ class AuthService:
 
         return await AuthService.generate_tokens(db, user)
 
+    @staticmethod
+    async def get_user_from_token(db: AsyncSession, token: str) -> User:
+        payload = decode_access_token(token)
+        if not payload:
+            raise CredentialsException(detail="Invalid access token")
+
+        if payload.get("type") != "access":
+            raise CredentialsException(detail="Unsupported token type")
+
+        username = payload.get("sub")
+        if not username:
+            raise CredentialsException(detail="Invalid token payload")
+
+        user = await user_service.get_user_by_username(db, username)
+        if not user or not user.is_active:
+            raise CredentialsException(detail="User not found")
+
+        return user
+
 
 auth_service = AuthService()
