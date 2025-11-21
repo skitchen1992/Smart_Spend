@@ -46,3 +46,25 @@ class ValidationException(AppException):
         super().__init__(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=detail, error_code=error_code
         )
+
+
+class UserAlreadyExistsException(AppException):
+    """Пользователь уже существует"""
+
+    def __init__(self, detail: str = "User already exists", error_code: str = "USER_EXISTS"):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=detail, error_code=error_code
+        )
+
+
+class CredentialsException(AppException):
+    """Ошибка учетных данных"""
+
+    def __init__(
+        self,
+        detail: str = "Could not validate credentials",
+        error_code: str = "INVALID_CREDENTIALS",
+    ):
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=detail, error_code=error_code
+        )
