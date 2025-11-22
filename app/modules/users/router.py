@@ -6,8 +6,15 @@ from app.core.exceptions import NotFoundException
 from app.core.dto.response import StandardResponse, success_response
 from app.modules.users.service import user_service
 from app.modules.users.schemas import UserResponse
+from app.core.dependencies import get_current_user
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+
+@router.get("/me", response_model=StandardResponse[UserResponse])
+async def get_me(current_user=Depends(get_current_user)) -> StandardResponse[UserResponse]:
+    user_data = UserResponse.model_validate(current_user)
+    return success_response(data=user_data)
 
 
 @router.get("/{user_id}", response_model=StandardResponse[UserResponse])
