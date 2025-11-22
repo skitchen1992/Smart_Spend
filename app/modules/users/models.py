@@ -1,5 +1,7 @@
 # ORM-модель пользователя
 from sqlalchemy import Column, String, Boolean
+from sqlalchemy.orm import relationship
+
 from app.shared.base_model import BaseModel
 
 
@@ -14,5 +16,13 @@ class User(BaseModel):
     hashed_password = Column(String(255), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
 
+    group_links = relationship(
+        "GroupMember",
+        back_populates="user")
+
+    groups = relationship(
+        "Group",
+        secondary="group_members",
+        back_populates="members")
     # relationships (если будут связи с группами)
     # groups = relationship("Group", back_populates="users")
