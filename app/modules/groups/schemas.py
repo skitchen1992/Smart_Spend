@@ -23,6 +23,12 @@ class GroupDelete(BaseModel):
     pass
 
 class GroupResponse(BaseModel):
+    """
+    Полная информация о группе с её участниками
+
+        id (int): ID группы
+        members (list): Список пользователей, состоящих в группе
+    """
     id: int
     members: List[UserRead] = []
 
@@ -30,6 +36,12 @@ class GroupResponse(BaseModel):
         from_attributes = True
 
 class GroupShort(BaseModel):
+    """
+    Краткая информация о группе (для списков групп пользователя)
+
+        id (int): ID группы
+        name (str): Название группы
+    """
     id: int
     name: str
 
@@ -38,5 +50,10 @@ class GroupShort(BaseModel):
 
 
 class UserGroupsResponse(BaseModel):
+    """
+    Список групп, в которых состоит пользователь
+
+            groups (list)
+    """
     groups: List[GroupShort]
 
