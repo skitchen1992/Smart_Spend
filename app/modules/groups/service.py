@@ -94,56 +94,5 @@ class GroupService:
 
         return GroupResponse.model_validate(group_with_membres)
 
-    async def add_user_to_group_service(self, db: AsyncSession, group_id: int, username: str):
-        """
-        Добавить пользователя в группу.
-
-        Args:
-            db (AsyncSession): Асинхронная сессия БД.
-            group_id (int): ID группы.
-            username (str): Имя пользователя.
-
-        Returns:
-            GroupResponse: Группа с обновлённым списком участников.
-
-        Raises:
-            HTTPException: Если группа или пользователь не найдены.
-        """
-        group = await group_repository.get_with_members(db, group_id)
-        if not group:
-            raise HTTPException(404, "Group not found")
-
-        add_user = await group_repository.add_user(db=db, group_id=group_id, username=username)
-        if not add_user:
-            raise HTTPException(404, "User not found")
-
-        return GroupResponse.model_validate(add_user)
-
-
-    async def remove_user_from_group_service(self, db: AsyncSession, group_id: int, username: str):
-        """
-        Удалить пользователя из группы.
-
-        Args:
-            db (AsyncSession): Асинхронная сессия БД.
-            group_id (int): ID группы.
-            username (str): Имя пользователя.
-
-        Returns:
-            GroupResponse: Группа после удаления пользователя.
-
-        Raises:
-            HTTPException: Если группа или пользователь не найдены.
-        """
-        group = await group_repository.get_with_members(db, group_id)
-        if not group:
-            raise HTTPException(404, "Group not found")
-
-        remove_user = await group_repository.remove_user(db=db, group_id=group_id, username=username)
-        if not remove_user:
-            raise HTTPException(404, "User not found")
-
-        return GroupResponse.model_validate(remove_user)
-
 
 group_service = GroupService()

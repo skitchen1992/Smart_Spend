@@ -88,66 +88,8 @@ class GroupRepository(CRUDMixin[Group]):
         group = Group(name=data.name)
         db.add(group)
         await db.commit()
-        await db.refresh(group)
         return group
 
-    async def add_user(self, db: AsyncSession, group_id: int, username: str):
-        """
-        Добавить пользователя в группу.
-
-        Args:
-            db (AsyncSession): Асинхронная сессия БД.
-            group_id (int): ID группы.
-            username (str): Имя пользователя, которого нужно добавить.
-
-        Returns:
-            Group | None: Группа с обновлёнными участниками,
-                            либо None, если пользователь не найден.
-        """
-        # 1. find user
-        user = await db.execute(select(User).where(User.username == username))
-        user = user.scalar_one_or_none()
-        if not user:
-            return None
-
-        # 2. insert into group_members
-        link = GroupMember(group_id=group_id, user_id=user.id)
-        #add session to sql
-        db.add(link)
-        #sql insert
-        await db.commit()
-        await db.refresh(link)
-
-        return await self.get_with_members(db, group_id)
-
-    async def remove_user(self, db: AsyncSession, group_id: int, username: str):
-        """
-        Удалить пользователя из группы.
-
-        Args:
-            db (AsyncSession): Асинхронная сессия БД.
-            group_id (int): ID группы.
-            username (str): Имя пользователя, которого нужно удалить.
-
-        Returns:
-            Group | None: Группа после удаления участника,
-                            либо None, если пользователь не найден.
-        """
-        user = await db.execute(select(User).where(User.username == username))
-        user = user.scalar_one_or_none()
-        if not user:
-            return None
-
-        stmt = delete(GroupMember).where(
-            (GroupMember.group_id == group_id) &
-            (GroupMember.user_id == user.id)
-        )
-
-        await db.execute(stmt)
-        await db.commit()
-        await db.refresh(user)
-
-        return await self.get_with_members(db, group_id)
 
 
 group_repository = GroupRepository()

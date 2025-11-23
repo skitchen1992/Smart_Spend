@@ -24,7 +24,7 @@ class GroupDelete(BaseModel):
 
 class GroupResponse(BaseModel):
     """
-    Полная информация о группе с её участниками
+    Информация о группе с её участниками
 
         id (int): ID группы
         members (list): Список пользователей, состоящих в группе

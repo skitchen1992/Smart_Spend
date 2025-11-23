@@ -33,20 +33,6 @@ async def create_group(
     new_group = await group_service.create_group_service(db=db, data=data)
     return success_response(data=new_group)
 
-@router.post("/{group_id}/add/{username}", response_model=StandardResponse[GroupResponse])
-async def add_user_to_group(
-        group_id: int, username: str, db: AsyncSession = Depends(get_db)
-) -> StandardResponse[GroupResponse]:
-    added_user_to_group = await group_service.add_user_to_group_service(db=db, group_id=group_id, username=username)
-    return success_response(data=added_user_to_group)
-
-@router.delete("/{group_id}/remove/{username}", response_model=StandardResponse[GroupResponse])
-async def remove_user_from_group(
-        group_id: int, username: str, db: AsyncSession = Depends(get_db)
-) -> StandardResponse[GroupResponse]:
-    removed_user = await group_service.remove_user_from_group_service(db=db, group_id=group_id, username=username)
-    return success_response(data=removed_user)
-
 
 
 
