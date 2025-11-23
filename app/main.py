@@ -12,7 +12,8 @@ from app.core.middleware import StandardResponseMiddleware
 from app.modules.users.router import router as users_router
 from app.modules.groups.router import router as groups_router
 from app.modules.analytics.router import router as analytics_router
-from app.modules.group_members.router import router as group_members_router
+from app.modules.auth.router import router as auth_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -55,10 +56,11 @@ app.add_exception_handler(AppException, app_exception_handler)
 app.add_exception_handler(HTTPException, http_exception_handler)
 
 # Подключение роутов модулей
+app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(users_router, prefix=settings.API_V1_STR)
 app.include_router(groups_router, prefix=settings.API_V1_STR)
 app.include_router(analytics_router, prefix=settings.API_V1_STR)
-app.include_router(group_members_router, prefix=settings.API_V1_STR)
+
 
 @app.get("/")
 async def root() -> dict[str, str]:
