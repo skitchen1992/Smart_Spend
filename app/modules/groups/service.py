@@ -73,7 +73,7 @@ class GroupService:
         return UserGroupsResponse(groups=groups_response)
 
 
-    async def create_group_service(self, db: AsyncSession, data) -> GroupResponse:
+    async def create_group_service(self, db: AsyncSession, data, owner_id: int) -> GroupResponse:
         """
         Создать новую группу.
 
@@ -87,12 +87,16 @@ class GroupService:
         Raises:
             HTTPException: Если после создания группа не была найдена (маловероятно).
         """
-        group = await group_repository.create_group(db, data)
+        group = await group_repository.create_group(db, data, owner_id)
         group_with_membres = await group_repository.get_with_members(db=db, group_id=group.id)
         if not group_with_membres:
             raise HTTPException(404, "User not found")
 
         return GroupResponse.model_validate(group_with_membres)
 
+
+    async def delete_group_service(self, db: AsyncSession, group_id: int):
+        await group_repository.delete_group(db, group_id)
+        return {"message": "Group deleted successfully"}
 
 group_service = GroupService()

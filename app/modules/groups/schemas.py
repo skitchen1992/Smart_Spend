@@ -20,7 +20,7 @@ class GroupUpdate(BaseModel):
     pass
 
 class GroupDelete(BaseModel):
-    pass
+    group_id: int
 
 class GroupResponse(BaseModel):
     """

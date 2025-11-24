@@ -1,7 +1,10 @@
+from typing import Coroutine
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, insert, delete
 from sqlalchemy.orm import selectinload
 
+from app.core.dependencies import get_current_user
 from app.modules.groups.models import Group
 from app.modules.groups.models import GroupMember
 from app.modules.groups.schemas import GroupCreate
@@ -74,7 +77,7 @@ class GroupRepository(CRUDMixin[Group]):
         return list(result.scalars().all())
 
 
-    async def create_group(self, db: AsyncSession, data: GroupCreate):
+    async def create_group(self, db: AsyncSession, data: GroupCreate, owner_id: int) -> Group:
         """
         Создать новую группу.
 
@@ -85,10 +88,18 @@ class GroupRepository(CRUDMixin[Group]):
         Returns:
             Group: Созданный объект группы.
         """
-        group = Group(name=data.name)
+        group = Group(name=data.name, owner_id=owner_id)
         db.add(group)
         await db.commit()
         return group
+
+
+    async def delete_group(self, db: AsyncSession, group_id: int):
+        await db.execute(
+            delete(Group)
+            .where(Group.id == group_id))
+        await db.commit()
+
 
 
 
