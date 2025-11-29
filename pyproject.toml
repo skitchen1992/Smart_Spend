@@ -28,6 +28,7 @@ argon2-cffi = "23.1.0"
 [tool.poetry.group.dev.dependencies]
 pytest = "7.4.3"
 pytest-asyncio = "0.21.1"
+pytest-cov = "4.1.0"
 httpx = "0.25.2"
 black = "23.11.0"
 ruff = "0.1.6"
@@ -53,3 +54,19 @@ warn_unused_configs = true
 disallow_untyped_defs = true
 # no_implicit_optional = true  # По умолчанию включено в новых версиях mypy
 # strict_optional = true  # По умолчанию включено
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+addopts = [
+    "-v",
+    "--strict-markers",
+    "--tb=short",
+]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+]
