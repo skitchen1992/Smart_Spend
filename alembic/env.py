@@ -27,6 +27,12 @@ config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 # add your model's MetaData object here
 # for 'autogenerate' support
 # Импортируем все модели для автогенерации миграций
+# Важно: импортируем все модели, чтобы они зарегистрировались в Base.metadata
+from app.modules.auth.models import RefreshToken  # noqa: F401
+from app.modules.users.models import User  # noqa: F401
+from app.modules.groups.models import Group  # noqa: F401
+from app.modules.group_members.models import GroupMember  # noqa: F401
+from app.modules.transactions.models import Transaction  # noqa: F401
 
 target_metadata = Base.metadata
 
