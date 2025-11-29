@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Float, Text, Enum
+from sqlalchemy import Column, String, Float, Text, Enum, Integer, ForeignKey
 import enum
 from app.shared.base_model import BaseModel
 
@@ -13,17 +13,17 @@ class Transaction(BaseModel):
     """ORM-модель транзакции"""
     __tablename__ = "transactions"
 
-    title = Column(String(200), nullable=False, index=True)
+    title = Column(String(100), nullable=False, index=True)
     amount = Column(Float, nullable=False)
     description = Column(Text, nullable=True)
-    category = Column(String(100), nullable=True, index=True)
+    category = Column(String(50), nullable=True, index=True)
     type = Column(Enum(TransactionType), nullable=False, default=TransactionType.EXPENSE)
-    
-    # Связи (если будут пользователи и группы)
-    # user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    # group_id = Column(Integer, ForeignKey("groups.id"), nullable=True)
-    
-    # relationships
-    # user = relationship("User", back_populates="transactions")
-    # group = relationship("Group", back_populates="transactions")
 
+    user_id = Column(
+        Integer,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    # Если позже понадобится связь с группой:
+    # group_id = Column(Integer, ForeignKey("groups.id"), nullable=True)
