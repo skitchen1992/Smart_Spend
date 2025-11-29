@@ -1,5 +1,58 @@
-# Эндпоинты для групп
-# TODO: Реализовать роутер групп
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.functions import current_user
 
-router = APIRouter(prefix="/groups", tags=["groups"])
+from app.core.db import get_db
+from app.core.dependencies import get_current_user
+from app.core.exceptions import NotFoundException
+from app.core.dto.response import StandardResponse, success_response
+from app.modules.groups.service import group_service
+from app.modules.groups.schemas import GroupResponse, GroupCreate, UserGroupsResponse, GroupDelete
+
+router = APIRouter(prefix="/group", tags=["groups"])
+
+@router.get("/{group_id}", response_model=StandardResponse[GroupResponse])
+async def get_group(
+    group_id: int, id_user: int,  db: AsyncSession = Depends(get_db)
+) -> StandardResponse[GroupResponse]:
+    group = await group_service.get_group_service(db=db, group_id=group_id, id_user=id_user)
+
+    return success_response(data=group)
+
+
+@router.get("/user/{user_id}/groups", response_model=StandardResponse[UserGroupsResponse])
+async def get_users_groups(
+        user_id: int,
+        db: AsyncSession = Depends(get_db)
+) -> StandardResponse[UserGroupsResponse]:
+    data = await group_service.get_users_groups_service(db=db, user_id=user_id)
+    return success_response(data=data)
+
+
+@router.post("/create", response_model=StandardResponse[GroupResponse])
+async def create_group(
+        data: GroupCreate,
+        db: AsyncSession = Depends(get_db),
+        current_user = Depends(get_current_user)
+) -> StandardResponse[GroupResponse]:
+
+    new_group = await group_service.create_group_service(
+        db=db,
+        data=data,
+        owner_id = current_user.id)
+
+    return success_response(data=new_group)
+
+@router.delete("/delete", response_model=dict)
+async def delete_group(
+        data: GroupDelete,
+        db: AsyncSession = Depends(get_db)):
+    return await group_service.delete_group_service(db=db, group_id=data.group_id)
+
+
+
+
+
+
+
+
