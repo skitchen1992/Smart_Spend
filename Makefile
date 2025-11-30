@@ -106,6 +106,9 @@ docker-migrate: ## Применить миграции в Docker
 docker-migrate-create: ## Создать миграцию в Docker (использовать: make docker-migrate-create MESSAGE="описание")
 	docker compose exec app poetry run alembic revision --autogenerate -m "$(MESSAGE)"
 
+docker-migrate-stamp: ## Установить версию миграции в БД (использовать: make docker-migrate-stamp REVISION="revision_id")
+	docker compose exec app poetry run alembic stamp "$(REVISION)"
+
 docker-test: ## Запустить тесты в Docker
 	docker compose exec app poetry run pytest
 
