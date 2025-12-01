@@ -56,4 +56,5 @@ class UserGroupsResponse(BaseModel):
             groups (list)
     """
     groups: List[GroupShort]
-
+    class Config:
+        from_attributes = True

@@ -13,9 +13,11 @@ router = APIRouter(prefix="/group", tags=["groups"])
 
 @router.get("/{group_id}", response_model=StandardResponse[GroupResponse])
 async def get_group(
-    group_id: int, id_user: int,  db: AsyncSession = Depends(get_db)
+        group_id: int,
+        id_user = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db)
 ) -> StandardResponse[GroupResponse]:
-    group = await group_service.get_group_service(db=db, group_id=group_id, id_user=id_user)
+    group = await group_service.get_group_service(db=db, group_id=group_id, id_user=id_user.id)
 
     return success_response(data=group)
 
