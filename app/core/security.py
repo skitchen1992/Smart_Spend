@@ -4,6 +4,7 @@ import hashlib
 from uuid import uuid4
 from jose import JWTError, jwt  # type: ignore[import-untyped]
 from passlib.context import CryptContext  # type: ignore[import-untyped]
+from passlib.exc import UnknownHashError  # type: ignore[import-untyped]
 from app.core.config import settings
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
@@ -11,7 +12,14 @@ pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Проверка пароля"""
-    return bool(pwd_context.verify(plain_password, hashed_password))
+    if not hashed_password or not plain_password:
+        return False
+    try:
+        return bool(pwd_context.verify(plain_password, hashed_password))
+    except UnknownHashError:
+        # Если хэш не может быть идентифицирован, значит пароль в неправильном формате
+        # Это может произойти, если пароль был создан с другой схемой хэширования
+        return False
 
 
 def get_password_hash(password: str) -> str:
