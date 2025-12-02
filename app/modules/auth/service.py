@@ -28,7 +28,11 @@ class AuthService:
         if not user or not user.is_active:
             return None
 
-        if not verify_password(password, user.hashed_password):
+        # Проверяем, что хэш пароля существует и не пустой
+        if not user.hashed_password:
+            return None
+
+        if not verify_password(password, user.hashed_password):  # type: ignore[arg-type]
             return None
 
         return user
@@ -55,7 +59,7 @@ class AuthService:
             db,
             token_jti=token_jti,
             token_hash=hash_token(refresh_token),
-            user_id=user.id,
+            user_id=user.id,  # type: ignore[arg-type]
             expires_at=refresh_expiration,
         )
 
@@ -91,7 +95,7 @@ class AuthService:
         if token_record.token_hash != hash_token(refresh_token):
             raise CredentialsException(detail="Refresh token mismatch")
 
-        user = await user_service.get_user_by_id(db, token_record.user_id)
+        user = await user_service.get_user_by_id(db, token_record.user_id)  # type: ignore[arg-type]
         if not user or not user.is_active or user.username != username:
             raise CredentialsException(detail="User not found")
 

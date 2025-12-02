@@ -15,22 +15,39 @@ class TransactionService:
     async def create_transaction(
         self,
         db: AsyncSession,
+        *,
+        user_id: int,
         transaction_in: TransactionCreate,
     ) -> Transaction:
-        return await transaction_repository.create(db=db, obj_in=transaction_in)
+        return await transaction_repository.create(
+            db=db,
+            obj_in=transaction_in,
+            user_id=user_id,
+        )
 
     async def get_transaction(
         self,
         db: AsyncSession,
+        *,
         transaction_id: int,
+        user_id: int,
     ) -> Transaction | None:
-        return await transaction_repository.get(db=db, transaction_id=transaction_id)
+        return await transaction_repository.get(
+            db=db,
+            transaction_id=transaction_id,
+            user_id=user_id,
+        )
 
     async def list_transactions(
         self,
         db: AsyncSession,
+        *,
+        user_id: int,
     ) -> Sequence[Transaction]:
-        return await transaction_repository.list(db=db)
+        return await transaction_repository.list(
+            db=db,
+            user_id=user_id,
+        )
 
     async def update_transaction(
         self,
