@@ -17,8 +17,10 @@ class TransactionRepository:
         db: AsyncSession,
         *,
         obj_in: TransactionCreate,
+        user_id: int,
     ) -> Transaction:
         data = obj_in.model_dump()
+        data["user_id"] = user_id  
         db_obj = Transaction(**data)
         db.add(db_obj)
         await db.flush()
@@ -28,18 +30,27 @@ class TransactionRepository:
     async def get(
         self,
         db: AsyncSession,
+        *,
         transaction_id: int,
+        user_id: int,
     ) -> Transaction | None:
         result = await db.execute(
-            select(Transaction).where(Transaction.id == transaction_id)
+            select(Transaction).where(
+                Transaction.id == transaction_id,
+                Transaction.user_id == user_id,
+            )
         )
         return result.scalar_one_or_none()
 
     async def list(
         self,
         db: AsyncSession,
+        *,
+        user_id: int,
     ) -> Sequence[Transaction]:
-        result = await db.execute(select(Transaction))
+        result = await db.execute(
+            select(Transaction).where(Transaction.user_id == user_id)
+        )
         return result.scalars().all()
 
     async def update(
@@ -50,6 +61,7 @@ class TransactionRepository:
         obj_in: TransactionUpdate,
     ) -> Transaction:
         data = obj_in.model_dump(exclude_unset=True, exclude_none=True)
+        data.pop("user_id", None)
         for field, value in data.items():
             setattr(db_obj, field, value)
 

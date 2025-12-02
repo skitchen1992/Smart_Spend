@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Optional
+
 from pydantic import BaseModel, Field
+
 from app.modules.transactions.models import TransactionType
 
 
@@ -35,11 +37,6 @@ class TransactionBase(BaseModel):
 
 class TransactionCreate(TransactionBase):
     """Схема для создания транзакции"""
-    user_id: int = Field(
-        ...,
-        gt=0,
-        description="ID пользователя-владельца транзакции",
-    )
 
 
 class TransactionUpdate(BaseModel):
