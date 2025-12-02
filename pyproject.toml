@@ -19,11 +19,13 @@ pydantic-settings = "2.1.0"
 sqlalchemy = "2.0.23"
 alembic = "1.12.1"
 asyncpg = "0.29.0"
+greenlet = "3.0.1"
 python-dotenv = "1.0.0"
 python-multipart = "0.0.6"
 python-jose = { extras = ["cryptography"], version = "3.3.0" }
 passlib = { extras = ["bcrypt", "argon2"], version = "1.7.4" }
 argon2-cffi = "23.1.0"
+pyyaml = "6.0.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "7.4.3"
@@ -34,6 +36,7 @@ black = "23.11.0"
 ruff = "0.1.6"
 mypy = "1.7.1"
 pre-commit = "3.6.0"
+types-PyYAML = "6.0.12.12"
 
 [build-system]
 requires = ["poetry-core"]
