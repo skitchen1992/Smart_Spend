@@ -1,8 +1,7 @@
 # app/modules/transactions/router.py
 
-from typing import List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
@@ -14,6 +13,7 @@ from app.modules.transactions.schemas import (
     TransactionCreate,
     TransactionUpdate,
     TransactionResponse,
+    PaginatedTransactionResponse,
 )
 from app.modules.transactions.service import transaction_service
 
@@ -33,7 +33,7 @@ async def create_transaction(
     """Создать транзакцию текущего пользователя"""
     tx = await transaction_service.create_transaction(
         db=db,
-        user_id=current_user.id,
+        user_id=int(current_user.id),
         transaction_in=transaction_in,
     )
     data = TransactionResponse.model_validate(tx)
@@ -42,19 +42,29 @@ async def create_transaction(
 
 @router.get(
     "",
-    response_model=StandardResponse[List[TransactionResponse]],
+    response_model=StandardResponse[PaginatedTransactionResponse],
 )
 async def list_transactions(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> StandardResponse[List[TransactionResponse]]:
-    """Получить список всех транзакций текущего пользователя"""
-    txs = await transaction_service.list_transactions(
+    category: str | None = Query(None, description="Фильтр по категории"),
+    date_from: str | None = Query(None, description="Начальная дата (YYYY-MM-DD)"),
+    date_to: str | None = Query(None, description="Конечная дата (YYYY-MM-DD)"),
+    page: int = Query(1, ge=1, description="Номер страницы"),
+    page_size: int = Query(20, ge=1, le=100, description="Размер страницы"),
+) -> StandardResponse[PaginatedTransactionResponse]:
+    """Получить список транзакций текущего пользователя с фильтрами и пагинацией"""
+    result = await transaction_service.list_transactions(
         db=db,
-        user_id=current_user.id,
+        user_id=int(current_user.id),
+        category=category,
+        date_from=date_from,
+        date_to=date_to,
+        page=page,
+        page_size=page_size,
     )
-    data = [TransactionResponse.model_validate(tx) for tx in txs]
-    return success_response(data=data)
+
+    return success_response(data=result)
 
 
 @router.get(
@@ -70,7 +80,7 @@ async def get_transaction(
     tx = await transaction_service.get_transaction(
         db=db,
         transaction_id=transaction_id,
-        user_id=current_user.id,
+        user_id=int(current_user.id),
     )
     if not tx:
         raise NotFoundException(detail="Транзакция не найдена")
@@ -93,7 +103,7 @@ async def update_transaction(
     tx = await transaction_service.get_transaction(
         db=db,
         transaction_id=transaction_id,
-        user_id=current_user.id,
+        user_id=int(current_user.id),
     )
     if not tx:
         raise NotFoundException(detail="Транзакция не найдена")
@@ -120,7 +130,7 @@ async def delete_transaction(
     tx = await transaction_service.get_transaction(
         db=db,
         transaction_id=transaction_id,
-        user_id=current_user.id,
+        user_id=int(current_user.id),
     )
     if not tx:
         raise NotFoundException(detail="Транзакция не найдена")

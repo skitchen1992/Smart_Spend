@@ -2,9 +2,7 @@
 from sqlalchemy import Column, String, Boolean
 from sqlalchemy.orm import relationship
 
-from app.modules.group_members.models import GroupMember
 from app.shared.base_model import BaseModel
-from app.modules.auth.models import RefreshToken
 
 
 class User(BaseModel):
@@ -27,10 +25,6 @@ class User(BaseModel):
         back_populates="user",
     )
 
-    groups = relationship(
-        "Group",
-        secondary="group_members",
-        back_populates="members"
-    )
+    groups = relationship("Group", secondary="group_members", back_populates="members")
 
     # groups = relationship("Group", back_populates="users")

@@ -1,23 +1,19 @@
-from typing import Coroutine
-
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, insert, delete
+from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 
-from app.core.dependencies import get_current_user
 from app.modules.groups.models import Group
 from app.modules.groups.models import GroupMember
 from app.modules.groups.schemas import GroupCreate
-from app.modules.users.models import User
 from app.shared.mixins import CRUDMixin
+from typing import Optional
+
 
 class GroupRepository(CRUDMixin[Group]):
-
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(Group)
 
-
-    async def get_group(self, db: AsyncSession, group_id: int, id_user: int):
+    async def get_group(self, db: AsyncSession, group_id: int, id_user: int) -> Optional[Group]:
         """
         Получить группу по ID, но только если указанный пользователь является членом этой группы.
 
@@ -33,13 +29,12 @@ class GroupRepository(CRUDMixin[Group]):
         result = await db.execute(
             select(Group)
             .join(GroupMember, GroupMember.group_id == Group.id)
-            .where(GroupMember.group_id == group_id,
-                   GroupMember.user_id == id_user)
+            .where(GroupMember.group_id == group_id, GroupMember.user_id == id_user)
             .options(selectinload(Group.members))
         )
         return result.scalar_one_or_none()
 
-    async def get_with_members(self, db: AsyncSession, group_id: int):
+    async def get_with_members(self, db: AsyncSession, group_id: int) -> Optional[Group]:
         """
         Получить группу по ID вместе со списком её участников.
 
@@ -51,8 +46,8 @@ class GroupRepository(CRUDMixin[Group]):
             Group | None: Группа с загруженными членами или None, если не найдена.
         """
         result = await db.execute(
-            select(Group).where(Group.id == group_id)
-            .options(selectinload(Group.members)) )
+            select(Group).where(Group.id == group_id).options(selectinload(Group.members))
+        )
         return result.scalar_one_or_none()
 
     async def get_users_groups(self, db: AsyncSession, user_id: int) -> list[Group]:
@@ -76,7 +71,6 @@ class GroupRepository(CRUDMixin[Group]):
         result = await db.execute(stmt)
         return list(result.scalars().all())
 
-
     async def create_group(self, db: AsyncSession, data: GroupCreate, owner_id: int) -> Group:
         """
         Создать новую группу.
@@ -93,14 +87,9 @@ class GroupRepository(CRUDMixin[Group]):
         await db.commit()
         return group
 
-
-    async def delete_group(self, db: AsyncSession, group_id: int):
-        await db.execute(
-            delete(Group)
-            .where(Group.id == group_id))
+    async def delete_group(self, db: AsyncSession, group_id: int) -> None:
+        await db.execute(delete(Group).where(Group.id == group_id))
         await db.commit()
-
-
 
 
 group_repository = GroupRepository()

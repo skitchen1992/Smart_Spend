@@ -3,16 +3,22 @@
 Здесь можно добавить логику инициализации БД, миграций и т.д.
 """
 
-from app.core.db import engine, Base
+from sqlalchemy import text
+
+from app.core.db import engine
 from app.core.config import settings, Settings
 
 
 async def init_db() -> None:
-    """Инициализация базы данных (асинхронная)"""
-    # Создание всех таблиц
-    async with engine.begin() as conn:
-        pass
-        # await conn.run_sync(Base.metadata.create_all)
+    """
+    Инициализация базы данных (асинхронная)
+
+    Примечание: Создание таблиц выполняется через Alembic миграции.
+    Эта функция проверяет подключение к БД при старте приложения.
+    """
+    # Проверка подключения к БД
+    async with engine.connect() as conn:
+        await conn.execute(text("SELECT 1"))
 
 
 def get_settings() -> Settings:

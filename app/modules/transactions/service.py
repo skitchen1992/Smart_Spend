@@ -1,12 +1,19 @@
 # app/modules/transactions/service.py
 
-from typing import Sequence
+from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.transactions.models import Transaction
 from app.modules.transactions.repository import transaction_repository
-from app.modules.transactions.schemas import TransactionCreate, TransactionUpdate
+from app.modules.transactions.schemas import (
+    TransactionCreate,
+    TransactionUpdate,
+    TransactionFilters,
+    PaginationParams,
+    PaginatedTransactionResponse,
+    TransactionResponse,
+)
 
 
 class TransactionService:
@@ -43,10 +50,66 @@ class TransactionService:
         db: AsyncSession,
         *,
         user_id: int,
-    ) -> Sequence[Transaction]:
-        return await transaction_repository.list(
+        category: str | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> PaginatedTransactionResponse:
+        """Получить список транзакций с фильтрами и пагинацией"""
+        # Создаем объект фильтров из параметров
+        filters = None
+        if category or date_from or date_to:
+            date_from_parsed = None
+            date_to_parsed = None
+            if date_from:
+                try:
+                    date_from_parsed = datetime.strptime(date_from, "%Y-%m-%d").date()
+                except ValueError:
+                    pass  # Игнорируем неверный формат даты
+            if date_to:
+                try:
+                    date_to_parsed = datetime.strptime(date_to, "%Y-%m-%d").date()
+                except ValueError:
+                    pass  # Игнорируем неверный формат даты
+            filters = TransactionFilters(
+                category=category,
+                date_from=date_from_parsed,
+                date_to=date_to_parsed,
+            )
+
+        # Создаем объект пагинации
+        pagination = PaginationParams(page=page, page_size=page_size)
+
+        skip = (pagination.page - 1) * pagination.page_size
+
+        # Получаем транзакции и общее количество
+        transactions = await transaction_repository.list(
             db=db,
             user_id=user_id,
+            filters=filters,
+            skip=skip,
+            limit=pagination.page_size,
+        )
+
+        total = await transaction_repository.count(
+            db=db,
+            user_id=user_id,
+            filters=filters,
+        )
+
+        # Вычисляем общее количество страниц
+        pages = (total + pagination.page_size - 1) // pagination.page_size if total > 0 else 0
+
+        # Преобразуем Transaction объекты в TransactionResponse
+        items = [TransactionResponse.model_validate(tx) for tx in transactions]
+
+        return PaginatedTransactionResponse(
+            items=items,
+            total=total,
+            page=pagination.page,
+            page_size=pagination.page_size,
+            pages=pages,
         )
 
     async def update_transaction(

@@ -465,42 +465,27 @@
       }
     },
     "/api/v1/transactions": {
-      "get": {
-        "tags": [
-          "transactions"
-        ],
-        "summary": "List Transactions",
-        "description": "Получить список всех транзакций",
-        "operationId": "list_transactions_api_v1_transactions_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StandardResponse_List_TransactionResponse__"
-                }
-              }
-            }
-          }
-        }
-      },
       "post": {
         "tags": [
           "transactions"
         ],
         "summary": "Create Transaction",
-        "description": "Создать транзакцию",
+        "description": "Создать транзакцию текущего пользователя",
         "operationId": "create_transaction_api_v1_transactions_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/TransactionCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -524,6 +509,124 @@
             }
           }
         }
+      },
+      "get": {
+        "tags": [
+          "transactions"
+        ],
+        "summary": "List Transactions",
+        "description": "Получить список транзакций текущего пользователя с фильтрами и пагинацией",
+        "operationId": "list_transactions_api_v1_transactions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Фильтр по категории",
+              "title": "Category"
+            },
+            "description": "Фильтр по категории"
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Начальная дата (YYYY-MM-DD)",
+              "title": "Date From"
+            },
+            "description": "Начальная дата (YYYY-MM-DD)"
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Конечная дата (YYYY-MM-DD)",
+              "title": "Date To"
+            },
+            "description": "Конечная дата (YYYY-MM-DD)"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Номер страницы",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "Номер страницы"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Размер страницы",
+              "default": 20,
+              "title": "Page Size"
+            },
+            "description": "Размер страницы"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse_PaginatedTransactionResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/transactions/{transaction_id}": {
@@ -532,8 +635,13 @@
           "transactions"
         ],
         "summary": "Get Transaction",
-        "description": "Получить транзакцию по id",
+        "description": "Получить транзакцию по id (только свою)",
         "operationId": "get_transaction_api_v1_transactions__transaction_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "transaction_id",
@@ -573,8 +681,13 @@
           "transactions"
         ],
         "summary": "Update Transaction",
-        "description": "Обновить транзакцию по id",
+        "description": "Обновить транзакцию по id (только свою)",
         "operationId": "update_transaction_api_v1_transactions__transaction_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "transaction_id",
@@ -624,8 +737,13 @@
           "transactions"
         ],
         "summary": "Delete Transaction",
-        "description": "Удалить транзакцию по id",
+        "description": "Удалить транзакцию по id (только свою)",
         "operationId": "delete_transaction_api_v1_transactions__transaction_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "transaction_id",
@@ -890,6 +1008,48 @@
         ],
         "title": "Login"
       },
+      "PaginatedTransactionResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TransactionResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "Список транзакций"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Общее количество транзакций"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "description": "Текущая страница"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size",
+            "description": "Размер страницы"
+          },
+          "pages": {
+            "type": "integer",
+            "title": "Pages",
+            "description": "Общее количество страниц"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "pages"
+        ],
+        "title": "PaginatedTransactionResponse",
+        "description": "Схема ответа с пагинированным списком транзакций"
+      },
       "RefreshTokenRequest": {
         "properties": {
           "refresh_token": {
@@ -961,7 +1121,7 @@
           "timestamp": "2025-11-21T14:12:00Z"
         }
       },
-      "StandardResponse_List_TransactionResponse__": {
+      "StandardResponse_PaginatedTransactionResponse_": {
         "properties": {
           "success": {
             "type": "boolean",
@@ -976,16 +1136,12 @@
           "data": {
             "anyOf": [
               {
-                "items": {
-                  "$ref": "#/components/schemas/TransactionResponse"
-                },
-                "type": "array"
+                "$ref": "#/components/schemas/PaginatedTransactionResponse"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Data",
             "description": "Данные ответа"
           },
           "error": {
@@ -1010,7 +1166,7 @@
           "success",
           "code"
         ],
-        "title": "StandardResponse[List[TransactionResponse]]",
+        "title": "StandardResponse[PaginatedTransactionResponse]",
         "example": {
           "code": 200,
           "data": {
@@ -1380,19 +1536,12 @@
             ],
             "description": "Тип транзакции (доход/расход)",
             "default": "expense"
-          },
-          "user_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0.0,
-            "title": "User Id",
-            "description": "ID пользователя-владельца транзакции"
           }
         },
         "type": "object",
         "required": [
           "title",
-          "amount",
-          "user_id"
+          "amount"
         ],
         "title": "TransactionCreate",
         "description": "Схема для создания транзакции"

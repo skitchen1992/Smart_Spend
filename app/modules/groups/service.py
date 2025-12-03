@@ -1,17 +1,14 @@
-from typing import List
-
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.sql.functions import user
 
 from .repository import group_repository
-from .models import Group
-from .schemas import GroupResponse, UserRead, GroupShort, UserGroupsResponse
+from .schemas import GroupResponse, UserRead, GroupShort, UserGroupsResponse, GroupCreate
 
 
 class GroupService:
-
-    async def get_group_service(self, db: AsyncSession, group_id: int, id_user: int) -> GroupResponse:
+    async def get_group_service(
+        self, db: AsyncSession, group_id: int, id_user: int
+    ) -> GroupResponse:
         """
         Получить информацию о группе, если пользователь имеет к ней доступ.
 
@@ -31,15 +28,12 @@ class GroupService:
         if not group:
             raise HTTPException(404, "User have no access to this groups")
 
-        members = [UserRead.model_validate({
-            "id": user.id,
-            "username": user.username
-        }) for user in group.members]
+        members = [
+            UserRead.model_validate({"id": user.id, "username": user.username})
+            for user in group.members
+        ]
 
-        group_response = GroupResponse(
-            id=group.id,
-            members=members
-        )
+        group_response = GroupResponse(id=int(group.id), members=members)
 
         return group_response
 
@@ -62,18 +56,13 @@ class GroupService:
         if not groups:
             raise HTTPException(404, "User not in any groups")
 
-        groups_response = [
-            GroupShort(
-                id=group.id,
-                name=group.name
-            )
-            for group in groups
-        ]
+        groups_response = [GroupShort(id=int(group.id), name=str(group.name)) for group in groups]
 
         return UserGroupsResponse(groups=groups_response)
 
-
-    async def create_group_service(self, db: AsyncSession, data, owner_id: int) -> GroupResponse:
+    async def create_group_service(
+        self, db: AsyncSession, data: GroupCreate, owner_id: int
+    ) -> GroupResponse:
         """
         Создать новую группу.
 
@@ -88,15 +77,15 @@ class GroupService:
             HTTPException: Если после создания группа не была найдена (маловероятно).
         """
         group = await group_repository.create_group(db, data, owner_id)
-        group_with_membres = await group_repository.get_with_members(db=db, group_id=group.id)
+        group_with_membres = await group_repository.get_with_members(db=db, group_id=int(group.id))
         if not group_with_membres:
             raise HTTPException(404, "User not found")
 
         return GroupResponse.model_validate(group_with_membres)
 
-
-    async def delete_group_service(self, db: AsyncSession, group_id: int):
+    async def delete_group_service(self, db: AsyncSession, group_id: int) -> dict:
         await group_repository.delete_group(db, group_id)
         return {"message": "Group deleted successfully"}
+
 
 group_service = GroupService()
