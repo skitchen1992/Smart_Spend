@@ -3,8 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.users.models import User
 from app.modules.users.repository import user_repository
 from app.modules.users.schemas import UserCreate
-from app.core.security import get_password_hash
-from app.core.exceptions import UserAlreadyExistsException
+from app.core.security import get_password_hash, verify_password
+from app.core.exceptions import UserAlreadyExistsException, CredentialsException
 
 
 class UserService:
@@ -48,6 +48,28 @@ class UserService:
         }
 
         return await user_repository.create(db=db, obj_in=user_data)
+
+    @staticmethod
+    async def change_password(
+        db: AsyncSession, user: User, old_password: str, new_password: str
+    ) -> User:
+        """Сменить пароль пользователя"""
+        # Проверяем текущий пароль
+        if not user.hashed_password:
+            raise CredentialsException(detail="Password not set for this user")
+
+        if not verify_password(old_password, user.hashed_password):
+            raise CredentialsException(detail="Incorrect current password")
+
+        # Хэшируем новый пароль
+        hashed_password = get_password_hash(new_password)
+
+        # Обновляем пароль
+        updated_user = await user_repository.update(
+            db=db, db_obj=user, obj_in={"hashed_password": hashed_password}
+        )
+
+        return updated_user
 
 
 # Создаем экземпляр сервиса для использования

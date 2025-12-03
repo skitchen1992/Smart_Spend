@@ -2,10 +2,12 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
+from app.core.dependencies import get_current_user
 from app.core.exceptions import CredentialsException
 from app.core.dto.response import StandardResponse, success_response
-from app.modules.auth.schemas import Token, Login, RefreshTokenRequest
+from app.modules.auth.schemas import Token, Login, RefreshTokenRequest, PasswordChange
 from app.modules.auth.service import auth_service
+from app.modules.users.models import User
 from app.modules.users.schemas import UserCreate
 from app.modules.users.service import user_service
 
@@ -45,3 +47,22 @@ async def refresh_token(refresh_data: RefreshTokenRequest, db: AsyncSession = De
     """
     tokens = await auth_service.refresh_access_token(db, refresh_data.refresh_token)
     return success_response(data=tokens)
+
+
+@router.post("/change-password", response_model=StandardResponse[dict])
+async def change_password(
+    password_data: PasswordChange,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Смена пароля пользователя.
+    Требует аутентификации и проверки текущего пароля.
+    """
+    await user_service.change_password(
+        db=db,
+        user=current_user,
+        old_password=password_data.old_password,
+        new_password=password_data.new_password,
+    )
+    return success_response(data={"message": "Password changed successfully"})
