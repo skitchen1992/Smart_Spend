@@ -1,12 +1,17 @@
 # app/modules/transactions/repository.py
 
 from typing import Sequence
+from datetime import datetime, time
 
-from sqlalchemy import select
+from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.transactions.models import Transaction
-from app.modules.transactions.schemas import TransactionCreate, TransactionUpdate
+from app.modules.transactions.schemas import (
+    TransactionCreate,
+    TransactionUpdate,
+    TransactionFilters,
+)
 
 
 class TransactionRepository:
@@ -20,7 +25,7 @@ class TransactionRepository:
         user_id: int,
     ) -> Transaction:
         data = obj_in.model_dump()
-        data["user_id"] = user_id  
+        data["user_id"] = user_id
         db_obj = Transaction(**data)
         db.add(db_obj)
         await db.flush()
@@ -47,11 +52,69 @@ class TransactionRepository:
         db: AsyncSession,
         *,
         user_id: int,
+        filters: TransactionFilters | None = None,
+        skip: int = 0,
+        limit: int = 20,
     ) -> Sequence[Transaction]:
-        result = await db.execute(
-            select(Transaction).where(Transaction.user_id == user_id)
-        )
+        """Получить список транзакций с фильтрами и пагинацией"""
+        query = select(Transaction).where(Transaction.user_id == user_id)
+
+        # Применяем фильтры
+        if filters:
+            conditions = []
+
+            if filters.category:
+                conditions.append(Transaction.category == filters.category)
+
+            if filters.date_from:
+                # Преобразуем date в datetime для сравнения (начало дня)
+                date_from_dt = datetime.combine(filters.date_from, time.min)
+                conditions.append(Transaction.created_at >= date_from_dt)
+
+            if filters.date_to:
+                # Преобразуем date в datetime для сравнения (конец дня)
+                date_to_dt = datetime.combine(filters.date_to, time.max)
+                conditions.append(Transaction.created_at <= date_to_dt)
+
+            if conditions:
+                query = query.where(and_(*conditions))
+
+        # Применяем пагинацию и сортировку
+        query = query.order_by(Transaction.created_at.desc()).offset(skip).limit(limit)
+
+        result = await db.execute(query)
         return result.scalars().all()
+
+    async def count(
+        self,
+        db: AsyncSession,
+        *,
+        user_id: int,
+        filters: TransactionFilters | None = None,
+    ) -> int:
+        """Подсчитать общее количество транзакций с фильтрами"""
+        query = select(func.count(Transaction.id)).where(Transaction.user_id == user_id)
+
+        # Применяем те же фильтры
+        if filters:
+            conditions = []
+
+            if filters.category:
+                conditions.append(Transaction.category == filters.category)
+
+            if filters.date_from:
+                date_from_dt = datetime.combine(filters.date_from, time.min)
+                conditions.append(Transaction.created_at >= date_from_dt)
+
+            if filters.date_to:
+                date_to_dt = datetime.combine(filters.date_to, time.max)
+                conditions.append(Transaction.created_at <= date_to_dt)
+
+            if conditions:
+                query = query.where(and_(*conditions))
+
+        result = await db.execute(query)
+        return result.scalar_one() or 0
 
     async def update(
         self,
@@ -62,6 +125,7 @@ class TransactionRepository:
     ) -> Transaction:
         data = obj_in.model_dump(exclude_unset=True, exclude_none=True)
         data.pop("user_id", None)
+
         for field, value in data.items():
             setattr(db_obj, field, value)
 
