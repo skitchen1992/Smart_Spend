@@ -1,0 +1,1220 @@
+openapi: 3.1.0
+info:
+  title: Smart Spend
+  description: API для управления расходами
+  version: 0.1.0
+paths:
+  /api/v1/auth/register:
+    post:
+      tags:
+      - Auth
+      summary: Register
+      description: Регистрация нового пользователя
+      operationId: register_api_v1_auth_register_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse_Token_'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/auth/login:
+    post:
+      tags:
+      - Auth
+      summary: Login
+      description: 'Авторизация пользователя.
+
+        Возвращает access и refresh токены.'
+      operationId: login_api_v1_auth_login_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse_Token_'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/auth/refresh:
+    post:
+      tags:
+      - Auth
+      summary: Refresh Token
+      description: Обновление токенов с помощью refresh токена.
+      operationId: refresh_token_api_v1_auth_refresh_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse_Token_'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/users/me:
+    get:
+      tags:
+      - users
+      summary: Get Me
+      operationId: get_me_api_v1_users_me_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse_UserResponse_'
+      security:
+      - HTTPBearer: []
+  /api/v1/users/{user_id}:
+    get:
+      tags:
+      - users
+      summary: Get User
+      operationId: get_user_api_v1_users__user_id__get
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse_UserResponse_'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/group/{group_id}:
+    get:
+      tags:
+      - groups
+      summary: Get Group
+      operationId: get_group_api_v1_group__group_id__get
+      parameters:
+      - name: group_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Group Id
+      - name: id_user
+        in: query
+        required: true
+        schema:
+          type: integer
+          title: Id User
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse_GroupResponse_'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/group/user/{user_id}/groups:
+    get:
+      tags:
+      - groups
+      summary: Get Users Groups
+      operationId: get_users_groups_api_v1_group_user__user_id__groups_get
+      parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: User Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse_UserGroupsResponse_'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/group/create:
+    post:
+      tags:
+      - groups
+      summary: Create Group
+      operationId: create_group_api_v1_group_create_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupCreate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse_GroupResponse_'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+      security:
+      - HTTPBearer: []
+  /api/v1/group/delete:
+    delete:
+      tags:
+      - groups
+      summary: Delete Group
+      operationId: delete_group_api_v1_group_delete_delete
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupDelete'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                title: Response Delete Group Api V1 Group Delete Delete
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/group-members/add_member:
+    post:
+      tags:
+      - group_members
+      summary: Add Member
+      operationId: add_member_api_v1_group_members_add_member_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupMemberCreate'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupMemberResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/group-members/delete:
+    delete:
+      tags:
+      - group_members
+      summary: Remove Member
+      operationId: remove_member_api_v1_group_members_delete_delete
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupMemberDelete'
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: object
+                title: Response Remove Member Api V1 Group Members Delete Delete
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/transactions:
+    post:
+      tags:
+      - transactions
+      summary: Create Transaction
+      description: Создать транзакцию текущего пользователя
+      operationId: create_transaction_api_v1_transactions_post
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionCreate'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse_TransactionResponse_'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    get:
+      tags:
+      - transactions
+      summary: List Transactions
+      description: Получить список транзакций текущего пользователя с фильтрами и
+        пагинацией
+      operationId: list_transactions_api_v1_transactions_get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: category
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Фильтр по категории
+          title: Category
+        description: Фильтр по категории
+      - name: date_from
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Начальная дата (YYYY-MM-DD)
+          title: Date From
+        description: Начальная дата (YYYY-MM-DD)
+      - name: date_to
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Конечная дата (YYYY-MM-DD)
+          title: Date To
+        description: Конечная дата (YYYY-MM-DD)
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          description: Номер страницы
+          default: 1
+          title: Page
+        description: Номер страницы
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          description: Размер страницы
+          default: 20
+          title: Page Size
+        description: Размер страницы
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse_PaginatedTransactionResponse_'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /api/v1/transactions/{transaction_id}:
+    get:
+      tags:
+      - transactions
+      summary: Get Transaction
+      description: Получить транзакцию по id (только свою)
+      operationId: get_transaction_api_v1_transactions__transaction_id__get
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: transaction_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Transaction Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse_TransactionResponse_'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    put:
+      tags:
+      - transactions
+      summary: Update Transaction
+      description: Обновить транзакцию по id (только свою)
+      operationId: update_transaction_api_v1_transactions__transaction_id__put
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: transaction_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Transaction Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionUpdate'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse_TransactionResponse_'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    delete:
+      tags:
+      - transactions
+      summary: Delete Transaction
+      description: Удалить транзакцию по id (только свою)
+      operationId: delete_transaction_api_v1_transactions__transaction_id__delete
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: transaction_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Transaction Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardResponse_dict_'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /:
+    get:
+      summary: Root
+      operationId: root__get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+                title: Response Root  Get
+  /health:
+    get:
+      summary: Health Check
+      operationId: health_check_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+                title: Response Health Check Health Get
+components:
+  schemas:
+    ErrorDetail:
+      properties:
+        message:
+          type: string
+          title: Message
+        code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Code
+      type: object
+      required:
+      - message
+      title: ErrorDetail
+      description: Детали ошибки
+    GroupCreate:
+      properties:
+        name:
+          type: string
+          title: Name
+      type: object
+      required:
+      - name
+      title: GroupCreate
+    GroupDelete:
+      properties:
+        group_id:
+          type: integer
+          title: Group Id
+      type: object
+      required:
+      - group_id
+      title: GroupDelete
+    GroupMemberCreate:
+      properties:
+        group_id:
+          type: integer
+          title: Group Id
+        user_id:
+          type: integer
+          title: User Id
+      type: object
+      required:
+      - group_id
+      - user_id
+      title: GroupMemberCreate
+    GroupMemberDelete:
+      properties:
+        group_id:
+          type: integer
+          title: Group Id
+        user_id:
+          type: integer
+          title: User Id
+      type: object
+      required:
+      - group_id
+      - user_id
+      title: GroupMemberDelete
+    GroupMemberResponse:
+      properties:
+        group_id:
+          type: integer
+          title: Group Id
+        user_id:
+          type: integer
+          title: User Id
+        id:
+          type: integer
+          title: Id
+      type: object
+      required:
+      - group_id
+      - user_id
+      - id
+      title: GroupMemberResponse
+    GroupResponse:
+      properties:
+        id:
+          type: integer
+          title: Id
+        members:
+          items:
+            $ref: '#/components/schemas/UserRead'
+          type: array
+          title: Members
+          default: []
+      type: object
+      required:
+      - id
+      title: GroupResponse
+      description: "Информация о группе с её участниками\n\n    id (int): ID группы\n\
+        \    members (list): Список пользователей, состоящих в группе"
+    GroupShort:
+      properties:
+        id:
+          type: integer
+          title: Id
+        name:
+          type: string
+          title: Name
+      type: object
+      required:
+      - id
+      - name
+      title: GroupShort
+      description: "Краткая информация о группе (для списков групп пользователя)\n\
+        \n    id (int): ID группы\n    name (str): Название группы"
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    Login:
+      properties:
+        username:
+          type: string
+          title: Username
+        password:
+          type: string
+          title: Password
+      type: object
+      required:
+      - username
+      - password
+      title: Login
+    PaginatedTransactionResponse:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/TransactionResponse'
+          type: array
+          title: Items
+          description: Список транзакций
+        total:
+          type: integer
+          title: Total
+          description: Общее количество транзакций
+        page:
+          type: integer
+          title: Page
+          description: Текущая страница
+        page_size:
+          type: integer
+          title: Page Size
+          description: Размер страницы
+        pages:
+          type: integer
+          title: Pages
+          description: Общее количество страниц
+      type: object
+      required:
+      - items
+      - total
+      - page
+      - page_size
+      - pages
+      title: PaginatedTransactionResponse
+      description: Схема ответа с пагинированным списком транзакций
+    RefreshTokenRequest:
+      properties:
+        refresh_token:
+          type: string
+          title: Refresh Token
+      type: object
+      required:
+      - refresh_token
+      title: RefreshTokenRequest
+    StandardResponse_GroupResponse_:
+      properties:
+        success:
+          type: boolean
+          title: Success
+          description: Успешность выполнения запроса
+        code:
+          type: integer
+          title: Code
+          description: HTTP код ответа
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/GroupResponse'
+          - type: 'null'
+          description: Данные ответа
+        error:
+          anyOf:
+          - $ref: '#/components/schemas/ErrorDetail'
+          - type: 'null'
+          description: Информация об ошибке
+        timestamp:
+          type: string
+          title: Timestamp
+          description: Временная метка
+      type: object
+      required:
+      - success
+      - code
+      title: StandardResponse[GroupResponse]
+      example:
+        code: 200
+        data:
+          user:
+            id: 1
+            name: Nikita
+        success: true
+        timestamp: '2025-11-21T14:12:00Z'
+    StandardResponse_PaginatedTransactionResponse_:
+      properties:
+        success:
+          type: boolean
+          title: Success
+          description: Успешность выполнения запроса
+        code:
+          type: integer
+          title: Code
+          description: HTTP код ответа
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/PaginatedTransactionResponse'
+          - type: 'null'
+          description: Данные ответа
+        error:
+          anyOf:
+          - $ref: '#/components/schemas/ErrorDetail'
+          - type: 'null'
+          description: Информация об ошибке
+        timestamp:
+          type: string
+          title: Timestamp
+          description: Временная метка
+      type: object
+      required:
+      - success
+      - code
+      title: StandardResponse[PaginatedTransactionResponse]
+      example:
+        code: 200
+        data:
+          user:
+            id: 1
+            name: Nikita
+        success: true
+        timestamp: '2025-11-21T14:12:00Z'
+    StandardResponse_Token_:
+      properties:
+        success:
+          type: boolean
+          title: Success
+          description: Успешность выполнения запроса
+        code:
+          type: integer
+          title: Code
+          description: HTTP код ответа
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/Token'
+          - type: 'null'
+          description: Данные ответа
+        error:
+          anyOf:
+          - $ref: '#/components/schemas/ErrorDetail'
+          - type: 'null'
+          description: Информация об ошибке
+        timestamp:
+          type: string
+          title: Timestamp
+          description: Временная метка
+      type: object
+      required:
+      - success
+      - code
+      title: StandardResponse[Token]
+      example:
+        code: 200
+        data:
+          user:
+            id: 1
+            name: Nikita
+        success: true
+        timestamp: '2025-11-21T14:12:00Z'
+    StandardResponse_TransactionResponse_:
+      properties:
+        success:
+          type: boolean
+          title: Success
+          description: Успешность выполнения запроса
+        code:
+          type: integer
+          title: Code
+          description: HTTP код ответа
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/TransactionResponse'
+          - type: 'null'
+          description: Данные ответа
+        error:
+          anyOf:
+          - $ref: '#/components/schemas/ErrorDetail'
+          - type: 'null'
+          description: Информация об ошибке
+        timestamp:
+          type: string
+          title: Timestamp
+          description: Временная метка
+      type: object
+      required:
+      - success
+      - code
+      title: StandardResponse[TransactionResponse]
+      example:
+        code: 200
+        data:
+          user:
+            id: 1
+            name: Nikita
+        success: true
+        timestamp: '2025-11-21T14:12:00Z'
+    StandardResponse_UserGroupsResponse_:
+      properties:
+        success:
+          type: boolean
+          title: Success
+          description: Успешность выполнения запроса
+        code:
+          type: integer
+          title: Code
+          description: HTTP код ответа
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/UserGroupsResponse'
+          - type: 'null'
+          description: Данные ответа
+        error:
+          anyOf:
+          - $ref: '#/components/schemas/ErrorDetail'
+          - type: 'null'
+          description: Информация об ошибке
+        timestamp:
+          type: string
+          title: Timestamp
+          description: Временная метка
+      type: object
+      required:
+      - success
+      - code
+      title: StandardResponse[UserGroupsResponse]
+      example:
+        code: 200
+        data:
+          user:
+            id: 1
+            name: Nikita
+        success: true
+        timestamp: '2025-11-21T14:12:00Z'
+    StandardResponse_UserResponse_:
+      properties:
+        success:
+          type: boolean
+          title: Success
+          description: Успешность выполнения запроса
+        code:
+          type: integer
+          title: Code
+          description: HTTP код ответа
+        data:
+          anyOf:
+          - $ref: '#/components/schemas/UserResponse'
+          - type: 'null'
+          description: Данные ответа
+        error:
+          anyOf:
+          - $ref: '#/components/schemas/ErrorDetail'
+          - type: 'null'
+          description: Информация об ошибке
+        timestamp:
+          type: string
+          title: Timestamp
+          description: Временная метка
+      type: object
+      required:
+      - success
+      - code
+      title: StandardResponse[UserResponse]
+      example:
+        code: 200
+        data:
+          user:
+            id: 1
+            name: Nikita
+        success: true
+        timestamp: '2025-11-21T14:12:00Z'
+    StandardResponse_dict_:
+      properties:
+        success:
+          type: boolean
+          title: Success
+          description: Успешность выполнения запроса
+        code:
+          type: integer
+          title: Code
+          description: HTTP код ответа
+        data:
+          anyOf:
+          - type: object
+          - type: 'null'
+          title: Data
+          description: Данные ответа
+        error:
+          anyOf:
+          - $ref: '#/components/schemas/ErrorDetail'
+          - type: 'null'
+          description: Информация об ошибке
+        timestamp:
+          type: string
+          title: Timestamp
+          description: Временная метка
+      type: object
+      required:
+      - success
+      - code
+      title: StandardResponse[dict]
+      example:
+        code: 200
+        data:
+          user:
+            id: 1
+            name: Nikita
+        success: true
+        timestamp: '2025-11-21T14:12:00Z'
+    Token:
+      properties:
+        access_token:
+          type: string
+          title: Access Token
+        refresh_token:
+          type: string
+          title: Refresh Token
+      type: object
+      required:
+      - access_token
+      - refresh_token
+      title: Token
+    TransactionCreate:
+      properties:
+        title:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Title
+          description: Название транзакции
+        amount:
+          type: number
+          exclusiveMinimum: 0.0
+          title: Amount
+          description: Сумма транзакции
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+          description: Описание транзакции
+        category:
+          anyOf:
+          - type: string
+            maxLength: 50
+          - type: 'null'
+          title: Category
+          description: Категория транзакции
+        type:
+          allOf:
+          - $ref: '#/components/schemas/TransactionType'
+          description: Тип транзакции (доход/расход)
+          default: expense
+      type: object
+      required:
+      - title
+      - amount
+      title: TransactionCreate
+      description: Схема для создания транзакции
+    TransactionResponse:
+      properties:
+        title:
+          type: string
+          maxLength: 100
+          minLength: 1
+          title: Title
+          description: Название транзакции
+        amount:
+          type: number
+          exclusiveMinimum: 0.0
+          title: Amount
+          description: Сумма транзакции
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+          description: Описание транзакции
+        category:
+          anyOf:
+          - type: string
+            maxLength: 50
+          - type: 'null'
+          title: Category
+          description: Категория транзакции
+        type:
+          allOf:
+          - $ref: '#/components/schemas/TransactionType'
+          description: Тип транзакции (доход/расход)
+          default: expense
+        id:
+          type: integer
+          title: Id
+        user_id:
+          type: integer
+          title: User Id
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Updated At
+      type: object
+      required:
+      - title
+      - amount
+      - id
+      - user_id
+      - created_at
+      title: TransactionResponse
+      description: Схема ответа с транзакцией
+    TransactionType:
+      type: string
+      enum:
+      - expense
+      - income
+      title: TransactionType
+      description: Тип транзакции
+    TransactionUpdate:
+      properties:
+        title:
+          anyOf:
+          - type: string
+            maxLength: 100
+            minLength: 1
+          - type: 'null'
+          title: Title
+        amount:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: 'null'
+          title: Amount
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+        category:
+          anyOf:
+          - type: string
+            maxLength: 50
+          - type: 'null'
+          title: Category
+        type:
+          anyOf:
+          - $ref: '#/components/schemas/TransactionType'
+          - type: 'null'
+      type: object
+      title: TransactionUpdate
+      description: Схема для обновления транзакции
+    UserCreate:
+      properties:
+        username:
+          type: string
+          maxLength: 50
+          minLength: 3
+          title: Username
+          description: Имя пользователя
+        email:
+          type: string
+          format: email
+          title: Email
+          description: Email пользователя
+        full_name:
+          anyOf:
+          - type: string
+            maxLength: 200
+          - type: 'null'
+          title: Full Name
+          description: Полное имя
+        password:
+          type: string
+          minLength: 8
+          title: Password
+          description: Пароль пользователя
+      type: object
+      required:
+      - username
+      - email
+      - password
+      title: UserCreate
+      description: Схема для создания пользователя
+    UserGroupsResponse:
+      properties:
+        groups:
+          items:
+            $ref: '#/components/schemas/GroupShort'
+          type: array
+          title: Groups
+      type: object
+      required:
+      - groups
+      title: UserGroupsResponse
+      description: "Список групп, в которых состоит пользователь\n\n        groups\
+        \ (list)"
+    UserRead:
+      properties:
+        id:
+          type: integer
+          title: Id
+        username:
+          type: string
+          title: Username
+      type: object
+      required:
+      - id
+      - username
+      title: UserRead
+    UserResponse:
+      properties:
+        username:
+          type: string
+          maxLength: 50
+          minLength: 3
+          title: Username
+          description: Имя пользователя
+        email:
+          type: string
+          format: email
+          title: Email
+          description: Email пользователя
+        full_name:
+          anyOf:
+          - type: string
+            maxLength: 200
+          - type: 'null'
+          title: Full Name
+          description: Полное имя
+        id:
+          type: integer
+          title: Id
+        is_active:
+          type: boolean
+          title: Is Active
+          description: Активен ли пользователь
+          default: true
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Updated At
+      type: object
+      required:
+      - username
+      - email
+      - id
+      - created_at
+      - updated_at
+      title: UserResponse
+      description: Схема для ответа API (без пароля)
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+  securitySchemes:
+    HTTPBearer:
+      type: http
+      scheme: bearer

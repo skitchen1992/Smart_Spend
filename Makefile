@@ -43,6 +43,9 @@ type-check: ## Проверить типы
 
 check: lint type-check ## Запустить все проверки (lint + type-check)
 
+generate-swagger: ## Сгенерировать swagger.json и swagger.yaml
+	poetry run python scripts/generate_openapi.py
+
 migrate: ## Применить миграции БД
 	poetry run alembic upgrade head
 
