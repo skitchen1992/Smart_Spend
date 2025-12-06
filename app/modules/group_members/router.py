@@ -1,16 +1,47 @@
+# group_members/router.py
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_db
-from .schemas import GroupMemberCreate, GroupMemberResponse, GroupMemberDelete
+from app.core.dependencies import get_current_user
+from app.core.dto.response import StandardResponse, success_response
+from .schemas import GroupMemberCreate, GroupMemberDelete, GroupMemberResponse
 from .service import group_member_service
+from app.modules.users.models import User
 
 router = APIRouter(prefix="/group-members", tags=["group_members"])
 
-@router.post("/add_member", response_model=GroupMemberResponse)
-async def add_member(data: GroupMemberCreate, db: AsyncSession = Depends(get_db)):
-    return await group_member_service.add(db, data.group_id, data.user_id)
+@router.post("/add_member", response_model=StandardResponse[GroupMemberResponse])
+async def add_member(
+    data: GroupMemberCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Добавить участника в группу.
+    Только владелец группы может добавлять участников.
+    """
+    result = await group_member_service.add(
+        db=db,
+        group_id=data.group_id,
+        user_id=data.user_id,
+        requester_id=current_user.id
+    )
+    return success_response(data=result)
 
-
-@router.delete("/delete", response_model=dict)
-async def remove_member(data: GroupMemberDelete, db: AsyncSession = Depends(get_db)):
-    return await group_member_service.remove(db, data.group_id, data.user_id)
+@router.delete("/delete", response_model=StandardResponse[GroupMemberResponse])
+async def remove_member(
+    data: GroupMemberDelete,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Удалить участника из группы.
+    Только владелец группы может удалять участников.
+    """
+    result = await group_member_service.remove(
+        db=db,
+        group_id=data.group_id,
+        user_id=data.user_id,
+        requester_id=current_user.id
+    )
+    return success_response(data=result)

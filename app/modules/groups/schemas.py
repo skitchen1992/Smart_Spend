@@ -16,6 +16,13 @@ class Groups(BaseModel):
 class GroupCreate(BaseModel):
     name: str
 
+class GroupsResponseCreate(BaseModel):
+    id: int
+    owner_id: int
+    members: List[UserRead] = []
+    class Config:
+        from_attributes = True
+
 class GroupUpdate(BaseModel):
     pass
 
@@ -56,4 +63,5 @@ class UserGroupsResponse(BaseModel):
             groups (list)
     """
     groups: List[GroupShort]
-
+    class Config:
+        from_attributes = True
