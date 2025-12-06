@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.functions import current_user
 
 from .repository import group_repository
 from .schemas import GroupResponse, UserRead, GroupShort, UserGroupsResponse, GroupCreate, GroupsResponseCreate
@@ -80,10 +81,10 @@ class GroupService:
         group = await group_repository.create_group(db, data, owner_id)
 
         try:
-            await group_member_service.add(
+            await group_member_service.add_owner(
                 db=db,
                 group_id=int(group.id),
-                user_id=owner_id,
+                user_id=owner_id
             )
         except HTTPException as e:
             if e.status_code == 400 and "already exists" in e.detail:

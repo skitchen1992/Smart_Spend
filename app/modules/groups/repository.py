@@ -13,6 +13,14 @@ class GroupRepository(CRUDMixin[Group]):
     def __init__(self) -> None:
         super().__init__(Group)
 
+    async def get_group_by_id(self, db: AsyncSession, group_id: int):
+        """
+        Получить группу по ID без проверки доступа.
+        """
+        query = select(Group).where(Group.id == group_id)
+        result = await db.execute(query)
+        return result.scalar_one_or_none()
+
     async def get_group(self, db: AsyncSession, group_id: int, id_user: int) -> Optional[Group]:
         """
         Получить группу по ID, но только если указанный пользователь является членом этой группы.
