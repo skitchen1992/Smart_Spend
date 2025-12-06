@@ -87,9 +87,42 @@ class GroupRepository(CRUDMixin[Group]):
         await db.commit()
         return group
 
-    async def delete_group(self, db: AsyncSession, group_id: int) -> None:
-        await db.execute(delete(Group).where(Group.id == group_id))
+    async def delete_group(self, db: AsyncSession, group_id: int, id_user: int) -> bool:
+        """
+        Удалить группу по ID, если пользователь является владельцем.
+
+        Args:
+            db (AsyncSession): Асинхронная сессия БД.
+            group_id (int): ID группы.
+            id_user (int): ID пользователя.
+
+        Returns:
+            bool: True если группа удалена, False если группа не найдена
+                  или пользователь не является владельцем.
+
+        Raises:
+            HTTPException: Если группа содержит участников помимо владельца.
+        """
+        # Сначала проверяем, существует ли группа и является ли пользователь владельцем
+        group = await db.execute(
+            select(Group)
+            .where(Group.id == group_id, Group.owner_id == id_user)
+            .options(selectinload(Group.members))
+        )
+        group = group.scalar_one_or_none()
+
+        if not group:
+            return False
+
+        # Удаляем саму группу
+        await db.execute(
+            delete(Group)
+            .where(Group.id == group_id)
+        )
+
         await db.commit()
+        return True
+
 
 
 group_repository = GroupRepository()
