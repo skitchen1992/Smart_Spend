@@ -5,7 +5,8 @@ from app.core.db import get_db
 from app.core.dependencies import get_current_user
 from app.core.dto.response import StandardResponse, success_response
 from app.modules.groups.service import group_service
-from app.modules.groups.schemas import GroupResponse, GroupCreate, UserGroupsResponse, GroupDelete, GroupsResponseCreate
+from app.modules.groups.schemas import GroupResponse, GroupCreate, UserGroupsResponse, GroupDelete, \
+    GroupsResponseCreate, GroupUpdate
 from app.modules.users.models import User
 
 router = APIRouter(prefix="/group", tags=["groups"])
@@ -42,6 +43,27 @@ async def create_group(
 
     return success_response(data=new_group)
 
+
+@router.put("/{group_id}/update", response_model=StandardResponse[GroupResponse])
+async def update_group(
+        group_id: int,
+        data: GroupUpdate,
+        current_user: User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db)
+) -> StandardResponse[GroupResponse]:
+    """
+    Обновить информацию о группе.
+
+    Только владелец группы может обновлять её информацию.
+    """
+    updated_group = await group_service.update_group_service(
+        db=db,
+        group_id=group_id,
+        data=data,
+        user_id=current_user.id
+    )
+
+    return success_response(data=updated_group)
 
 @router.delete("/delete", response_model=StandardResponse[dict])
 async def delete_group(

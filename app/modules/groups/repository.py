@@ -1,10 +1,10 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, update
 from sqlalchemy.orm import selectinload
 
 from app.modules.groups.models import Group
 from app.modules.groups.models import GroupMember
-from app.modules.groups.schemas import GroupCreate
+from app.modules.groups.schemas import GroupCreate, GroupUpdate
 from app.shared.mixins import CRUDMixin
 from typing import Optional
 
@@ -94,6 +94,57 @@ class GroupRepository(CRUDMixin[Group]):
         db.add(group)
         await db.commit()
         return group
+
+    async def update_group(
+            self,
+            db: AsyncSession,
+            group_id: int,
+            data: GroupUpdate,
+            user_id: int
+    ) -> Optional[Group]:
+        """
+        Обновить информацию о группе.
+
+        Args:
+            db (AsyncSession): Асинхронная сессия БД.
+            group_id (int): ID группы.
+            data (GroupUpdate): Данные для обновления.
+            user_id (int): ID пользователя (должен быть владельцем группы).
+
+        Returns:
+            Group | None: Обновлённый объект группы или None, если группа не найдена
+                         или пользователь не является владельцем.
+        """
+        # Проверяем, существует ли группа и является ли пользователь владельцем
+        group = await db.execute(
+            select(Group)
+            .where(Group.id == group_id, Group.owner_id == user_id)
+        )
+        group = group.scalar_one_or_none()
+
+        if not group:
+            return None
+
+        # Подготавливаем данные для обновления
+        update_data = {}
+        if data.name is not None:
+            update_data["name"] = data.name
+
+        if not update_data:
+            return group  # Нет данных для обновления
+
+        # Выполняем обновление
+        await db.execute(
+            update(Group)
+            .where(Group.id == group_id)
+            .values(**update_data)
+        )
+        await db.commit()
+
+        # Получаем обновлённую группу
+        updated_group = await self.get_with_members(db, group_id)
+        return updated_group
+
 
     async def delete_group(self, db: AsyncSession, group_id: int, id_user: int) -> bool:
         """

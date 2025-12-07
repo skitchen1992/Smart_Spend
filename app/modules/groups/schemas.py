@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -24,7 +24,7 @@ class GroupsResponseCreate(BaseModel):
         from_attributes = True
 
 class GroupUpdate(BaseModel):
-    pass
+    name: Optional[str] = None
 
 class GroupDelete(BaseModel):
     group_id: int

@@ -3,7 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.functions import current_user
 
 from .repository import group_repository
-from .schemas import GroupResponse, UserRead, GroupShort, UserGroupsResponse, GroupCreate, GroupsResponseCreate
+from .schemas import GroupResponse, UserRead, GroupShort, UserGroupsResponse, GroupCreate, GroupsResponseCreate, \
+    GroupUpdate
 from ..group_members.service import group_member_service
 
 
@@ -111,6 +112,52 @@ class GroupService:
             owner_id=group_with_membres.owner_id,
             members=members
         )
+
+    async def update_group_service(
+            self,
+            db: AsyncSession,
+            group_id: int,
+            data: GroupUpdate,
+            user_id: int
+    ) -> GroupResponse:
+        """
+        Обновить информацию о группе.
+
+        Args:
+            db (AsyncSession): Асинхронная сессия БД.
+            group_id (int): ID группы.
+            data (GroupUpdate): Данные для обновления.
+            user_id (int): ID пользователя (должен быть владельцем).
+
+        Returns:
+            GroupResponse: Обновлённая информация о группе.
+
+        Raises:
+            HTTPException: Если группа не найдена или пользователь не является владельцем.
+        """
+        # Обновляем группу
+        updated_group = await group_repository.update_group(db, group_id, data, user_id)
+
+        if not updated_group:
+            raise HTTPException(
+                status_code=404,
+                detail="Group not found or you don't have permission to edit it"
+            )
+
+        # Формируем ответ
+        members = [
+            UserRead(
+                id=member.id,
+                username=member.username
+            )
+            for member in updated_group.members
+        ]
+
+        return GroupResponse(
+            id=updated_group.id,
+            members=members
+        )
+
 
     async def delete_group_service(
             self,
