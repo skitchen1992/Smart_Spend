@@ -1,8 +1,11 @@
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql.functions import current_user
 
 from .repository import group_repository
-from .schemas import GroupResponse, UserRead, GroupShort, UserGroupsResponse, GroupCreate
+from .schemas import GroupResponse, UserRead, GroupShort, UserGroupsResponse, GroupCreate, GroupsResponseCreate, \
+    GroupUpdate
+from ..group_members.service import group_member_service
 
 
 class GroupService:
@@ -62,7 +65,7 @@ class GroupService:
 
     async def create_group_service(
         self, db: AsyncSession, data: GroupCreate, owner_id: int
-    ) -> GroupResponse:
+    ) -> GroupsResponseCreate:
         """
         Создать новую группу.
 
@@ -77,15 +80,119 @@ class GroupService:
             HTTPException: Если после создания группа не была найдена (маловероятно).
         """
         group = await group_repository.create_group(db, data, owner_id)
+
+        try:
+            await group_member_service.add_owner(
+                db=db,
+                group_id=int(group.id),
+                user_id=owner_id
+            )
+        except HTTPException as e:
+            if e.status_code == 400 and "already exists" in e.detail:
+                pass
+            else:
+                raise e
+
+        await db.refresh(group)
+
         group_with_membres = await group_repository.get_with_members(db=db, group_id=int(group.id))
         if not group_with_membres:
             raise HTTPException(404, "User not found")
 
-        return GroupResponse.model_validate(group_with_membres)
+        members = [
+            UserRead(
+                id=member.id,
+                username=member.username
+            )
+            for member in group_with_membres.members
+        ]
 
-    async def delete_group_service(self, db: AsyncSession, group_id: int) -> dict:
-        await group_repository.delete_group(db, group_id)
-        return {"message": "Group deleted successfully"}
+        return GroupsResponseCreate(
+            id=group_with_membres.id,
+            owner_id=group_with_membres.owner_id,
+            members=members
+        )
+
+    async def update_group_service(
+            self,
+            db: AsyncSession,
+            group_id: int,
+            data: GroupUpdate,
+            user_id: int
+    ) -> GroupResponse:
+        """
+        Обновить информацию о группе.
+
+        Args:
+            db (AsyncSession): Асинхронная сессия БД.
+            group_id (int): ID группы.
+            data (GroupUpdate): Данные для обновления.
+            user_id (int): ID пользователя (должен быть владельцем).
+
+        Returns:
+            GroupResponse: Обновлённая информация о группе.
+
+        Raises:
+            HTTPException: Если группа не найдена или пользователь не является владельцем.
+        """
+        # Обновляем группу
+        updated_group = await group_repository.update_group(db, group_id, data, user_id)
+
+        if not updated_group:
+            raise HTTPException(
+                status_code=404,
+                detail="Group not found or you don't have permission to edit it"
+            )
+
+        # Формируем ответ
+        members = [
+            UserRead(
+                id=member.id,
+                username=member.username
+            )
+            for member in updated_group.members
+        ]
+
+        return GroupResponse(
+            id=updated_group.id,
+            members=members
+        )
+
+
+    async def delete_group_service(
+            self,
+            db: AsyncSession,
+            group_id: int,
+            id_user: int
+    ) -> dict:
+        """
+        Удалить группу (сервисный слой).
+
+        Args:
+            db (AsyncSession): Асинхронная сессия БД.
+            group_id (int): ID группы.
+            id_user (int): ID пользователя.
+
+        Returns:
+            dict: Сообщение об успешном удалении.
+
+        Raises:
+            HTTPException: Если группа не найдена, пользователь не владелец
+                          или в группе есть другие участники.
+        """
+        try:
+            deleted = await group_repository.delete_group(db, group_id, id_user)
+
+            if not deleted:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Group not found or you don't have permission to delete it"
+                )
+
+            return {"message": "Group deleted successfully"}
+
+        except HTTPException as e:
+            raise e
 
 
 group_service = GroupService()
