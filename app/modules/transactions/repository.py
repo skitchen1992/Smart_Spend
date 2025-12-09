@@ -1,12 +1,12 @@
 # app/modules/transactions/repository.py
 
-from typing import Sequence
+from typing import Sequence, Dict
 from datetime import datetime, time
 
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.transactions.models import Transaction
+from app.modules.transactions.models import Transaction, TransactionType
 from app.modules.transactions.schemas import (
     TransactionCreate,
     TransactionUpdate,
@@ -142,6 +142,69 @@ class TransactionRepository:
     ) -> None:
         await db.delete(db_obj)
         await db.flush()
+
+    async def get_income_sum(
+        self,
+        db: AsyncSession,
+        *,
+        user_id: int,
+        date_from: datetime,
+        date_to: datetime,
+    ) -> float:
+        """Получить сумму доходов за период"""
+        query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
+            Transaction.user_id == user_id,
+            Transaction.type == TransactionType.INCOME,
+            Transaction.created_at >= date_from,
+            Transaction.created_at <= date_to,
+        )
+        result = await db.execute(query)
+        return float(result.scalar_one() or 0.0)
+
+    async def get_expense_sum(
+        self,
+        db: AsyncSession,
+        *,
+        user_id: int,
+        date_from: datetime,
+        date_to: datetime,
+    ) -> float:
+        """Получить сумму расходов за период"""
+        query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
+            Transaction.user_id == user_id,
+            Transaction.type == TransactionType.EXPENSE,
+            Transaction.created_at >= date_from,
+            Transaction.created_at <= date_to,
+        )
+        result = await db.execute(query)
+        return float(result.scalar_one() or 0.0)
+
+    async def get_expenses_by_category(
+        self,
+        db: AsyncSession,
+        *,
+        user_id: int,
+        date_from: datetime,
+        date_to: datetime,
+    ) -> Dict[str, float]:
+        """Получить расходы по категориям за период"""
+        query = (
+            select(
+                Transaction.category,
+                func.sum(Transaction.amount).label("total"),
+            )
+            .where(
+                Transaction.user_id == user_id,
+                Transaction.type == TransactionType.EXPENSE,
+                Transaction.created_at >= date_from,
+                Transaction.created_at <= date_to,
+                Transaction.category.isnot(None),
+            )
+            .group_by(Transaction.category)
+        )
+        result = await db.execute(query)
+        rows = result.all()
+        return {row.category: float(row.total) for row in rows if row.category}
 
 
 transaction_repository = TransactionRepository()
