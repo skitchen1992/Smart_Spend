@@ -2,6 +2,7 @@
 
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
@@ -65,6 +66,35 @@ async def list_transactions(
     )
 
     return success_response(data=result)
+
+
+@router.get(
+    "/export",
+    response_class=Response,
+)
+async def export_transactions(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    category: str | None = Query(None, description="Фильтр по категории"),
+    date_from: str | None = Query(None, description="Начальная дата (YYYY-MM-DD)"),
+    date_to: str | None = Query(None, description="Конечная дата (YYYY-MM-DD)"),
+) -> Response:
+    """Экспортировать транзакции текущего пользователя в CSV файл"""
+    csv_content = await transaction_service.export_transactions_to_csv(
+        db=db,
+        user_id=int(current_user.id),
+        category=category,
+        date_from=date_from,
+        date_to=date_to,
+    )
+
+    return Response(
+        content=csv_content.encode("utf-8"),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": 'attachment; filename="transactions.csv"',
+        },
+    )
 
 
 @router.get(
