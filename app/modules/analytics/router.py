@@ -16,7 +16,7 @@ from app.core.db import get_db  # noqa: E402
 from app.core.dto.response import StandardResponse, success_response  # noqa: E402
 from app.core.dependencies import get_current_user  # noqa: E402
 from app.modules.users.models import User  # noqa: E402
-from app.modules.analytics.schemas import AnalyticsResponse  # noqa: E402
+from app.modules.analytics.schemas import AnalyticsResponse, GroupAnalyticsResponse  # noqa: E402
 from app.modules.analytics.service import analytics_service  # noqa: E402
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
@@ -57,6 +57,22 @@ async def get_analytics(
 
     return success_response(data=result)
 
+@router.get("/groups/{group_id}", response_model=GroupAnalyticsResponse)
+async def get_group_analytics(
+    group_id: int,
+    period: str = Query(..., description="Период в формате YYYY-MM"),
+    db: AsyncSession = Depends(get_db),
+    current_user = Depends(get_current_user),
+):
+    """
+    Получить аналитику по расходам в конкретной группе за указанный период
+    """
+    return await analytics_service.get_group_analytics(
+        db=db,
+        user_id=current_user.id,
+        group_id=group_id,
+        period=period,
+    )
 
 @router.get(
     "/chart",
