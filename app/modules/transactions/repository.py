@@ -85,6 +85,38 @@ class TransactionRepository:
         result = await db.execute(query)
         return result.scalars().all()
 
+    async def list_all(
+        self,
+        db: AsyncSession,
+        *,
+        user_id: int,
+        filters: TransactionFilters | None = None,
+    ) -> Sequence[Transaction]:
+        """Получить все транзакции без пагинации (для экспорта)"""
+        query = select(Transaction).where(Transaction.user_id == user_id)
+
+        if filters:
+            conditions = []
+
+            if filters.category:
+                conditions.append(Transaction.category == filters.category)
+
+            if filters.date_from:
+                date_from_dt = datetime.combine(filters.date_from, time.min)
+                conditions.append(Transaction.created_at >= date_from_dt)
+
+            if filters.date_to:
+                date_to_dt = datetime.combine(filters.date_to, time.max)
+                conditions.append(Transaction.created_at <= date_to_dt)
+
+            if conditions:
+                query = query.where(and_(*conditions))
+
+        query = query.order_by(Transaction.created_at.desc())
+
+        result = await db.execute(query)
+        return result.scalars().all()
+
     async def count(
         self,
         db: AsyncSession,
@@ -95,7 +127,6 @@ class TransactionRepository:
         """Подсчитать общее количество транзакций с фильтрами"""
         query = select(func.count(Transaction.id)).where(Transaction.user_id == user_id)
 
-        # Применяем те же фильтры
         if filters:
             conditions = []
 

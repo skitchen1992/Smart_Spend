@@ -36,13 +36,81 @@ def upgrade() -> None:
     op.create_foreign_key(
         "fk_transactions_user_id", "transactions", "users", ["user_id"], ["id"], ondelete="CASCADE"
     )
-    op.drop_constraint("users_email_key", "users", type_="unique")
-    op.drop_constraint("users_username_key", "users", type_="unique")
-    op.drop_index("ix_users_email", table_name="users")
-    op.create_index(op.f("ix_users_email"), "users", ["email"], unique=True)
-    op.drop_index("ix_users_username", table_name="users")
-    op.create_index(op.f("ix_users_username"), "users", ["username"], unique=True)
-    op.create_index(op.f("ix_users_id"), "users", ["id"], unique=False)
+    
+    # Условное удаление ограничений - используем SQL IF EXISTS
+    # Проверяем и удаляем ограничения только если они существуют
+    op.execute("""
+        DO $$ 
+        BEGIN
+            IF EXISTS (
+                SELECT 1 FROM pg_constraint 
+                WHERE conname = 'users_email_key' 
+                AND conrelid = 'users'::regclass
+            ) THEN
+                ALTER TABLE users DROP CONSTRAINT users_email_key;
+            END IF;
+            
+            IF EXISTS (
+                SELECT 1 FROM pg_constraint 
+                WHERE conname = 'users_username_key' 
+                AND conrelid = 'users'::regclass
+            ) THEN
+                ALTER TABLE users DROP CONSTRAINT users_username_key;
+            END IF;
+        END $$;
+    """)
+    
+    # Условное удаление индексов
+    op.execute("""
+        DO $$ 
+        BEGIN
+            IF EXISTS (
+                SELECT 1 FROM pg_indexes 
+                WHERE indexname = 'ix_users_email' 
+                AND tablename = 'users'
+            ) THEN
+                DROP INDEX IF EXISTS ix_users_email;
+            END IF;
+            
+            IF EXISTS (
+                SELECT 1 FROM pg_indexes 
+                WHERE indexname = 'ix_users_username' 
+                AND tablename = 'users'
+            ) THEN
+                DROP INDEX IF EXISTS ix_users_username;
+            END IF;
+        END $$;
+    """)
+    
+    # Условное создание индексов - создаем только если они не существуют
+    op.execute("""
+        DO $$ 
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_indexes 
+                WHERE indexname = 'ix_users_email' 
+                AND tablename = 'users'
+            ) THEN
+                CREATE UNIQUE INDEX ix_users_email ON users (email);
+            END IF;
+            
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_indexes 
+                WHERE indexname = 'ix_users_username' 
+                AND tablename = 'users'
+            ) THEN
+                CREATE UNIQUE INDEX ix_users_username ON users (username);
+            END IF;
+            
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_indexes 
+                WHERE indexname = 'ix_users_id' 
+                AND tablename = 'users'
+            ) THEN
+                CREATE INDEX ix_users_id ON users (id);
+            END IF;
+        END $$;
+    """)
     # ### end Alembic commands ###
 
 

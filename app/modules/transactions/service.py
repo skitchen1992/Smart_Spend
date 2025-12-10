@@ -1,5 +1,7 @@
 # app/modules/transactions/service.py
 
+import csv
+import io
 from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -132,6 +134,77 @@ class TransactionService:
         db_obj: Transaction,
     ) -> None:
         await transaction_repository.delete(db=db, db_obj=db_obj)
+
+    async def export_transactions_to_csv(
+        self,
+        db: AsyncSession,
+        *,
+        user_id: int,
+        category: str | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+    ) -> str:
+        """Экспортировать транзакции в CSV формат"""
+        filters = None
+        if category or date_from or date_to:
+            date_from_parsed = None
+            date_to_parsed = None
+            if date_from:
+                try:
+                    date_from_parsed = datetime.strptime(date_from, "%Y-%m-%d").date()
+                except ValueError:
+                    pass
+            if date_to:
+                try:
+                    date_to_parsed = datetime.strptime(date_to, "%Y-%m-%d").date()
+                except ValueError:
+                    pass
+            filters = TransactionFilters(
+                category=category,
+                date_from=date_from_parsed,
+                date_to=date_to_parsed,
+            )
+
+        transactions = await transaction_repository.list_all(
+            db=db,
+            user_id=user_id,
+            filters=filters,
+        )
+
+        output = io.StringIO()
+        writer = csv.writer(output, delimiter=",", quoting=csv.QUOTE_MINIMAL)
+
+        writer.writerow(
+            [
+                "ID",
+                "Название",
+                "Сумма",
+                "Тип",
+                "Категория",
+                "Описание",
+                "Дата создания",
+                "Дата обновления",
+            ]
+        )
+
+        for tx in transactions:
+            writer.writerow(
+                [
+                    tx.id,
+                    tx.title,
+                    tx.amount,
+                    tx.type.value,
+                    tx.category or "",
+                    tx.description or "",
+                    tx.created_at.strftime("%Y-%m-%d %H:%M:%S") if tx.created_at else "",
+                    tx.updated_at.strftime("%Y-%m-%d %H:%M:%S") if tx.updated_at else "",
+                ]
+            )
+
+        csv_content = output.getvalue()
+        output.close()
+
+        return "\ufeff" + csv_content
 
 
 transaction_service = TransactionService()
