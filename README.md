@@ -2,6 +2,13 @@
 
 Приложение для управления расходами на базе FastAPI с модульной архитектурой.
 
+## Команда проекта
+1. Лаврентьев Никита	Тимлид-Разработчик, skitchen1992@gmail.com
+2. Артемов Гоша		Software Engineer, agg0073@gmail.com
+3. Лукьянчук Владислав	Software Engineer, unity.channel@bk.ru
+4. Цыбизов Дмитрий	Software Engineer, tsybizov97@gmail.com
+5. Паниклов Арсений	Software Engineer, arseniy.paniklov@gmail.com
+
 ## Быстрый старт
 
 ### Через Docker (рекомендуется):
