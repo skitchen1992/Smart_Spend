@@ -27,7 +27,7 @@ class AnalyticsService:
             date_to = datetime(year, month, last_day, 23, 59, 59)
             return date_from, date_to
         except (ValueError, IndexError) as e:
-            raise ValueError(f"Неверный формат периода: {period}. Ожидается формат YYYY-MM") from e
+            raise HTTPException(404,f"Неверный формат периода: {period}. Ожидается формат YYYY-MM") from e
 
     async def get_analytics(
         self,
