@@ -24,7 +24,9 @@ class TransactionRepository:
         obj_in: TransactionCreate,
         user_id: int,
     ) -> Transaction:
-        data = obj_in.model_dump()
+        # Используем model_dump без mode, чтобы получить Python объекты
+        # TransactionTypeColumn автоматически преобразует enum при сохранении в БД
+        data = obj_in.model_dump(exclude_none=True)
         data["user_id"] = user_id
         db_obj = Transaction(**data)
         db.add(db_obj)
@@ -154,7 +156,7 @@ class TransactionRepository:
         db_obj: Transaction,
         obj_in: TransactionUpdate,
     ) -> Transaction:
-        data = obj_in.model_dump(exclude_unset=True, exclude_none=True)
+        data = obj_in.model_dump(exclude_unset=True, exclude_none=True, mode="python")
         data.pop("user_id", None)
 
         for field, value in data.items():
@@ -238,12 +240,12 @@ class TransactionRepository:
         return {row.category: float(row.total) for row in rows if row.category}
 
     async def get_expenses_by_group(
-            self,
-            db: AsyncSession,
-            *,
-            user_id: int,
-            date_from: datetime,
-            date_to: datetime,
+        self,
+        db: AsyncSession,
+        *,
+        user_id: int,
+        date_from: datetime,
+        date_to: datetime,
     ) -> Dict[str, float]:
         """Получить расходы по группам за период"""
         query = (
@@ -262,15 +264,19 @@ class TransactionRepository:
         )
         result = await db.execute(query)
         rows = result.all()
-        return {f"group_{row.transaction_to_group}": float(row.total) for row in rows if row.transaction_to_group}
+        return {
+            f"group_{row.transaction_to_group}": float(row.total)
+            for row in rows
+            if row.transaction_to_group
+        }
 
     async def get_group_expense_sum(
-            self,
-            db: AsyncSession,
-            *,
-            group_id: int,
-            date_from: datetime,
-            date_to: datetime,
+        self,
+        db: AsyncSession,
+        *,
+        group_id: int,
+        date_from: datetime,
+        date_to: datetime,
     ) -> float:
         """Получить сумму расходов группы за период"""
         query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
@@ -283,12 +289,12 @@ class TransactionRepository:
         return float(result.scalar_one() or 0.0)
 
     async def get_group_expenses_by_category(
-            self,
-            db: AsyncSession,
-            *,
-            group_id: int,
-            date_from: datetime,
-            date_to: datetime,
+        self,
+        db: AsyncSession,
+        *,
+        group_id: int,
+        date_from: datetime,
+        date_to: datetime,
     ) -> Dict[str, float]:
         """Получить расходы группы по категориям за период"""
         query = (
@@ -310,12 +316,12 @@ class TransactionRepository:
         return {row.category: float(row.total) for row in rows if row.category}
 
     async def get_group_expenses_by_member(
-            self,
-            db: AsyncSession,
-            *,
-            group_id: int,
-            date_from: datetime,
-            date_to: datetime,
+        self,
+        db: AsyncSession,
+        *,
+        group_id: int,
+        date_from: datetime,
+        date_to: datetime,
     ) -> Dict[str, float]:
         """Получить расходы группы по участникам за период"""
         query = (
@@ -335,5 +341,6 @@ class TransactionRepository:
         rows = result.all()
 
         return {f"user_id: {row.user_id}": float(row.total) for row in rows}
+
 
 transaction_repository = TransactionRepository()

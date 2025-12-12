@@ -13,7 +13,7 @@ class GroupRepository(CRUDMixin[Group]):
     def __init__(self) -> None:
         super().__init__(Group)
 
-    async def get_group_by_id(self, db: AsyncSession, group_id: int):
+    async def get_group_by_id(self, db: AsyncSession, group_id: int) -> Optional[Group]:
         """
         Получить группу по ID без проверки доступа.
         """
@@ -96,11 +96,7 @@ class GroupRepository(CRUDMixin[Group]):
         return group
 
     async def update_group(
-            self,
-            db: AsyncSession,
-            group_id: int,
-            data: GroupUpdate,
-            user_id: int
+        self, db: AsyncSession, group_id: int, data: GroupUpdate, user_id: int
     ) -> Optional[Group]:
         """
         Обновить информацию о группе.
@@ -116,11 +112,10 @@ class GroupRepository(CRUDMixin[Group]):
                          или пользователь не является владельцем.
         """
         # Проверяем, существует ли группа и является ли пользователь владельцем
-        group = await db.execute(
-            select(Group)
-            .where(Group.id == group_id, Group.owner_id == user_id)
+        result = await db.execute(
+            select(Group).where(Group.id == group_id, Group.owner_id == user_id)
         )
-        group = group.scalar_one_or_none()
+        group = result.scalar_one_or_none()
 
         if not group:
             return None
@@ -134,17 +129,12 @@ class GroupRepository(CRUDMixin[Group]):
             return group  # Нет данных для обновления
 
         # Выполняем обновление
-        await db.execute(
-            update(Group)
-            .where(Group.id == group_id)
-            .values(**update_data)
-        )
+        await db.execute(update(Group).where(Group.id == group_id).values(**update_data))
         await db.commit()
 
         # Получаем обновлённую группу
         updated_group = await self.get_with_members(db, group_id)
         return updated_group
-
 
     async def delete_group(self, db: AsyncSession, group_id: int, id_user: int) -> bool:
         """
@@ -163,25 +153,21 @@ class GroupRepository(CRUDMixin[Group]):
             HTTPException: Если группа содержит участников помимо владельца.
         """
         # Сначала проверяем, существует ли группа и является ли пользователь владельцем
-        group = await db.execute(
+        result = await db.execute(
             select(Group)
             .where(Group.id == group_id, Group.owner_id == id_user)
             .options(selectinload(Group.members))
         )
-        group = group.scalar_one_or_none()
+        group = result.scalar_one_or_none()
 
         if not group:
             return False
 
         # Удаляем саму группу
-        await db.execute(
-            delete(Group)
-            .where(Group.id == group_id)
-        )
+        await db.execute(delete(Group).where(Group.id == group_id))
 
         await db.commit()
         return True
-
 
 
 group_repository = GroupRepository()
