@@ -18,6 +18,7 @@ class Transaction(BaseModel):
     description = Column(Text, nullable=True)
     category = Column(String(50), nullable=True, index=True)
     type = Column(Enum(TransactionType), nullable=False, default=TransactionType.EXPENSE)
+    transaction_to_group = Column(Integer, nullable=True)
 
     user_id = Column(
         Integer,

@@ -33,6 +33,10 @@ class TransactionBase(BaseModel):
         default=TransactionType.EXPENSE,
         description="Тип транзакции (доход/расход)",
     )
+    transaction_to_group: int = Field(
+        None,
+        description="Отношение к группе"
+    )
 
 
 class TransactionCreate(TransactionBase):

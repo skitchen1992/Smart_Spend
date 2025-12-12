@@ -237,5 +237,103 @@ class TransactionRepository:
         rows = result.all()
         return {row.category: float(row.total) for row in rows if row.category}
 
+    async def get_expenses_by_group(
+            self,
+            db: AsyncSession,
+            *,
+            user_id: int,
+            date_from: datetime,
+            date_to: datetime,
+    ) -> Dict[str, float]:
+        """Получить расходы по группам за период"""
+        query = (
+            select(
+                Transaction.transaction_to_group,
+                func.sum(Transaction.amount).label("total"),
+            )
+            .where(
+                Transaction.user_id == user_id,
+                Transaction.type == TransactionType.EXPENSE,
+                Transaction.created_at >= date_from,
+                Transaction.created_at <= date_to,
+                Transaction.transaction_to_group.isnot(None),
+            )
+            .group_by(Transaction.transaction_to_group)
+        )
+        result = await db.execute(query)
+        rows = result.all()
+        return {f"group_{row.transaction_to_group}": float(row.total) for row in rows if row.transaction_to_group}
+
+    async def get_group_expense_sum(
+            self,
+            db: AsyncSession,
+            *,
+            group_id: int,
+            date_from: datetime,
+            date_to: datetime,
+    ) -> float:
+        """Получить сумму расходов группы за период"""
+        query = select(func.coalesce(func.sum(Transaction.amount), 0)).where(
+            Transaction.transaction_to_group == group_id,
+            Transaction.type == TransactionType.EXPENSE,
+            Transaction.created_at >= date_from,
+            Transaction.created_at <= date_to,
+        )
+        result = await db.execute(query)
+        return float(result.scalar_one() or 0.0)
+
+    async def get_group_expenses_by_category(
+            self,
+            db: AsyncSession,
+            *,
+            group_id: int,
+            date_from: datetime,
+            date_to: datetime,
+    ) -> Dict[str, float]:
+        """Получить расходы группы по категориям за период"""
+        query = (
+            select(
+                Transaction.category,
+                func.sum(Transaction.amount).label("total"),
+            )
+            .where(
+                Transaction.transaction_to_group == group_id,
+                Transaction.type == TransactionType.EXPENSE,
+                Transaction.created_at >= date_from,
+                Transaction.created_at <= date_to,
+                Transaction.category.isnot(None),
+            )
+            .group_by(Transaction.category)
+        )
+        result = await db.execute(query)
+        rows = result.all()
+        return {row.category: float(row.total) for row in rows if row.category}
+
+    async def get_group_expenses_by_member(
+            self,
+            db: AsyncSession,
+            *,
+            group_id: int,
+            date_from: datetime,
+            date_to: datetime,
+    ) -> Dict[str, float]:
+        """Получить расходы группы по участникам за период"""
+        query = (
+            select(
+                Transaction.user_id,
+                func.sum(Transaction.amount).label("total"),
+            )
+            .where(
+                Transaction.transaction_to_group == group_id,
+                Transaction.type == TransactionType.EXPENSE,
+                Transaction.created_at >= date_from,
+                Transaction.created_at <= date_to,
+            )
+            .group_by(Transaction.user_id)
+        )
+        result = await db.execute(query)
+        rows = result.all()
+
+        return {f"user_id: {row.user_id}": float(row.total) for row in rows}
 
 transaction_repository = TransactionRepository()
