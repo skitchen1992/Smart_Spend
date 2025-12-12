@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .repository import group_member_repository
 from .schemas import GroupMemberResponse
 from ..groups.repository import group_repository  # Импортируем репозиторий групп
+from ..users.service import user_service
 
 
 class GroupMemberService:
@@ -38,6 +39,10 @@ class GroupMemberService:
         # Проверяем, не является ли user_id самим владельцем (он уже должен быть в группе)
         if user_id == requester_id:
             raise HTTPException(400, "Owner is already a member")
+
+        user_exists = await user_service.get_user_by_id(db, user_id)
+        if not user_exists:
+            raise HTTPException(400, "User dont exist")
 
         # Проверяем, не состоит ли пользователь уже в группе
         exists = await group_member_repository.exists(db, group_id, user_id)
