@@ -29,7 +29,6 @@ def upgrade() -> None:
         ),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("name"),
         sa.UniqueConstraint("owner_id"),
     )
     op.create_table(
