@@ -1,6 +1,8 @@
 """Фикстуры для тестов модуля transactions"""
 
+from collections.abc import Generator
 from typing import AsyncGenerator
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi import FastAPI
@@ -13,7 +15,7 @@ from app.core.dependencies import get_current_user
 
 
 @pytest.fixture
-def test_app(mock_db_session, mock_user):
+def test_app(mock_db_session: AsyncMock, mock_user: MagicMock) -> Generator[FastAPI, None, None]:
     """Создает тестовое приложение с переопределенными зависимостями"""
     app = FastAPI()
     app.include_router(router)
@@ -21,7 +23,7 @@ def test_app(mock_db_session, mock_user):
     async def override_get_db() -> AsyncGenerator[AsyncSession, None]:
         yield mock_db_session
 
-    async def override_get_current_user():
+    async def override_get_current_user() -> MagicMock:
         return mock_user
 
     app.dependency_overrides[get_db] = override_get_db
@@ -31,6 +33,6 @@ def test_app(mock_db_session, mock_user):
 
 
 @pytest.fixture
-def client(test_app):
+def client(test_app: FastAPI) -> TestClient:
     """Тестовый клиент"""
     return TestClient(test_app)
