@@ -36,6 +36,9 @@ make docker-migrate  # Применить миграции БД
 make docker-test 
 ```bash
 
+### Локально:
+
+```bash
 # 1. Установите Poetry (если еще не установлен)
 curl -sSL https://install.python-poetry.org | python3 -
 
