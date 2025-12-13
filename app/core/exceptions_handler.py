@@ -38,7 +38,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
 
 async def sqlalchemy_error_handler(request: Request, exc: SQLAlchemyError) -> JSONResponse:
     """Обработчик ошибок SQLAlchemy"""
-    error_detail = ErrorDetail(message="Database error", code=None)
+    error_detail = ErrorDetail(message="Ошибка базы данных", code=None)
 
     response: StandardResponse[None] = StandardResponse(
         success=False,

@@ -192,7 +192,7 @@ class GroupService:
             if not updated_group:
                 raise HTTPException(
                     status_code=404,
-                    detail="Group not found or you don't have permission to edit it",
+                    detail="Группа не найдена или у вас нет прав на её редактирование",
                 )
 
             # Коммитим транзакцию

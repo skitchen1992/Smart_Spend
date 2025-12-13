@@ -40,9 +40,9 @@ class AuthService:
     @staticmethod
     async def generate_tokens(db: AsyncSession, user: User) -> dict[str, str]:
         if not user.is_active:
-            raise CredentialsException(detail="User is inactive")
+            raise CredentialsException(detail="Пользователь неактивен")
         if user.id is None:
-            raise CredentialsException(detail="User identifier is missing")
+            raise CredentialsException(detail="Отсутствует идентификатор пользователя")
 
         payload: dict[str, Any] = {"sub": user.username}
 
@@ -72,32 +72,32 @@ class AuthService:
     async def refresh_access_token(db: AsyncSession, refresh_token: str) -> dict[str, str]:
         payload = decode_access_token(refresh_token)
         if not payload:
-            raise CredentialsException(detail="Invalid refresh token")
+            raise CredentialsException(detail="Недействительный refresh токен")
 
         if payload.get("type") != "refresh":
-            raise CredentialsException(detail="Invalid token type")
+            raise CredentialsException(detail="Неверный тип токена")
 
         username = payload.get("sub")
         token_jti = payload.get("jti")
         if not username or not token_jti:
-            raise CredentialsException(detail="Invalid token payload")
+            raise CredentialsException(detail="Неверная структура токена")
 
         token_record = await refresh_token_repository.get_by_jti(db, token_jti)
         if not token_record:
-            raise CredentialsException(detail="Refresh token not found")
+            raise CredentialsException(detail="Refresh токен не найден")
 
         if token_record.is_revoked:
-            raise CredentialsException(detail="Refresh token has been revoked")
+            raise CredentialsException(detail="Refresh токен был отозван")
 
         if token_record.expires_at <= datetime.now(timezone.utc):
-            raise CredentialsException(detail="Refresh token expired")
+            raise CredentialsException(detail="Refresh токен истек")
 
         if token_record.token_hash != hash_token(refresh_token):
-            raise CredentialsException(detail="Refresh token mismatch")
+            raise CredentialsException(detail="Несоответствие refresh токена")
 
         user = await user_service.get_user_by_id(db, token_record.user_id)  # type: ignore[arg-type]
         if not user or not user.is_active or user.username != username:
-            raise CredentialsException(detail="User not found")
+            raise CredentialsException(detail="Пользователь не найден")
 
         await refresh_token_repository.revoke(db, token_record)
 
@@ -107,18 +107,18 @@ class AuthService:
     async def get_user_from_token(db: AsyncSession, token: str) -> User:
         payload = decode_access_token(token)
         if not payload:
-            raise CredentialsException(detail="Invalid access token")
+            raise CredentialsException(detail="Недействительный access токен")
 
         if payload.get("type") != "access":
-            raise CredentialsException(detail="Unsupported token type")
+            raise CredentialsException(detail="Неподдерживаемый тип токена")
 
         username = payload.get("sub")
         if not username:
-            raise CredentialsException(detail="Invalid token payload")
+            raise CredentialsException(detail="Неверная структура токена")
 
         user = await user_service.get_user_by_username(db, username)
         if not user or not user.is_active:
-            raise CredentialsException(detail="User not found")
+            raise CredentialsException(detail="Пользователь не найден")
 
         return user
 

@@ -57,22 +57,24 @@ async def get_analytics(
 
     return success_response(data=result)
 
+
 @router.get("/groups/{group_id}", response_model=GroupAnalyticsResponse)
 async def get_group_analytics(
     group_id: int,
     period: str = Query(..., description="Период в формате YYYY-MM"),
     db: AsyncSession = Depends(get_db),
-    current_user = Depends(get_current_user),
-):
+    current_user: User = Depends(get_current_user),
+) -> GroupAnalyticsResponse:
     """
     Получить аналитику по расходам в конкретной группе за указанный период
     """
     return await analytics_service.get_group_analytics(
         db=db,
-        user_id=current_user.id,
+        user_id=int(current_user.id),
         group_id=group_id,
         period=period,
     )
+
 
 @router.get(
     "/chart",
@@ -161,22 +163,24 @@ async def get_expenses_chart(
 
     return Response(content=buf.read(), media_type="image/png")
 
+
 @router.get(
     "/chart/group/{group_id}",
     response_class=Response,
 )
 async def get_group_chart(
-        group_id: int,
-        db: AsyncSession = Depends(get_db),
-        current_user: User = Depends(get_current_user),
-        period: str | None = Query(
-            None,
-            description="Период в формате YYYY-MM (например, 2025-01) или 'month' для текущего месяца. Если не указан, используется текущий месяц",
-        ),
-        chart_type: str = Query(
-            "category",
-            description="Тип диаграммы: 'category' - по категориям, 'member' - по участникам",
-        ),
+    group_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    period: str
+    | None = Query(
+        None,
+        description="Период в формате YYYY-MM (например, 2025-01) или 'month' для текущего месяца. Если не указан, используется текущий месяц",
+    ),
+    chart_type: str = Query(
+        "category",
+        description="Тип диаграммы: 'category' - по категориям, 'member' - по участникам",
+    ),
 ) -> Response:
     """
     Получить диаграмму расходов конкретной группы за указанный период.
@@ -234,9 +238,12 @@ async def get_group_chart(
             # Создаем пустое изображение с сообщением
             fig, ax = plt.subplots(figsize=(8, 8))
             ax.text(
-                0.5, 0.5,
+                0.5,
+                0.5,
                 f"Нет данных о расходах\nв группе '{analytics.group_name}'\nза период {period}",
-                ha="center", va="center", fontsize=16
+                ha="center",
+                va="center",
+                fontsize=16,
             )
             ax.axis("off")
 
@@ -256,9 +263,12 @@ async def get_group_chart(
         # Создаем пустое изображение с сообщением
         fig, ax = plt.subplots(figsize=(8, 8))
         ax.text(
-            0.5, 0.5,
+            0.5,
+            0.5,
             f"Нет данных о расходах\nв группе '{analytics.group_name}'\nза период {period}",
-            ha="center", va="center", fontsize=16
+            ha="center",
+            va="center",
+            fontsize=16,
         )
         ax.axis("off")
 
@@ -280,10 +290,10 @@ async def get_group_chart(
     if len(labels) > max_items:
         # Сортируем по убыванию суммы
         sorted_data = sorted(zip(labels, amounts), key=lambda x: x[1], reverse=True)
-        top_labels, top_amounts = zip(*sorted_data[:max_items - 1])
+        top_labels, top_amounts = zip(*sorted_data[: max_items - 1])
 
         # Объединяем остальное в "Другие"
-        other_labels, other_amounts = zip(*sorted_data[max_items - 1:])
+        other_labels, other_amounts = zip(*sorted_data[max_items - 1 :])
         other_total = sum(other_amounts)
 
         labels = list(top_labels) + ["Другие"]
@@ -311,16 +321,17 @@ async def get_group_chart(
     ax.set_title(title, fontsize=16, fontweight="bold", pad=20)
 
     # Добавляем общую сумму расходов в центре
-    centre_circle = plt.Circle((0, 0), 0.70, fc='white')
+    centre_circle = plt.Circle((0, 0), 0.70, fc="white")
     fig.gca().add_artist(centre_circle)
 
     ax.text(
-        0, 0,
+        0,
+        0,
         f"Всего:\n{sum(amounts):.0f} руб.",
-        ha='center',
-        va='center',
+        ha="center",
+        va="center",
         fontsize=14,
-        fontweight='bold'
+        fontweight="bold",
     )
 
     # Сохраняем в буфер

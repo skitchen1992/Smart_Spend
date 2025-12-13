@@ -147,7 +147,7 @@ class TestChangePassword:
             assert data["success"] is True
             assert data["code"] == status.HTTP_200_OK
             assert "data" in data
-            assert data["data"]["message"] == "Password changed successfully"
+            assert data["data"]["message"] == "Пароль успешно изменен"
 
             mock_user_service.change_password.assert_called_once_with(
                 db=ANY,

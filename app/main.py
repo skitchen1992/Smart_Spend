@@ -74,7 +74,7 @@ app.include_router(transactions_router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 async def root() -> dict[str, str]:
-    return {"message": "Welcome to Smart Spend API"}
+    return {"message": "Добро пожаловать в Smart Spend API"}
 
 
 @app.get("/health")

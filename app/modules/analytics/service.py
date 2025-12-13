@@ -27,7 +27,9 @@ class AnalyticsService:
             date_to = datetime(year, month, last_day, 23, 59, 59)
             return date_from, date_to
         except (ValueError, IndexError) as e:
-            raise HTTPException(404,f"Неверный формат периода: {period}. Ожидается формат YYYY-MM") from e
+            raise HTTPException(
+                404, f"Неверный формат периода: {period}. Ожидается формат YYYY-MM"
+            ) from e
 
     async def get_analytics(
         self,
@@ -84,12 +86,12 @@ class AnalyticsService:
         )
 
     async def get_group_analytics(
-            self,
-            db: AsyncSession,
-            *,
-            user_id: int,
-            group_id: int,
-            period: str,
+        self,
+        db: AsyncSession,
+        *,
+        user_id: int,
+        group_id: int,
+        period: str,
     ) -> GroupAnalyticsResponse:
         """
         Получить аналитику по расходам в конкретной группе за указанный период
@@ -104,16 +106,12 @@ class AnalyticsService:
             GroupAnalyticsResponse: Аналитика по группе
         """
         # Проверяем, состоит ли пользователь в группе
-        group = await group_repository.get_group(
-            db=db,
-            group_id=group_id,
-            id_user=user_id
-        )
+        group = await group_repository.get_group(db=db, group_id=group_id, id_user=user_id)
 
         if not group:
             raise HTTPException(
                 status_code=403,
-                detail="User is not a member of this group or group does not exist"
+                detail="Пользователь не является участником этой группы или группа не существует",
             )
 
         # Парсим период
@@ -146,10 +144,11 @@ class AnalyticsService:
         return GroupAnalyticsResponse(
             period=period,
             group_id=group_id,
-            group_name=group.name,
+            group_name=str(group.name),
             total_expense=total_expense,
             by_category=by_category,
             member_expenses=member_expenses,
         )
+
 
 analytics_service = AnalyticsService()
