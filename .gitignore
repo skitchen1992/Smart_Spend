@@ -36,8 +36,8 @@ poetry.lock
 *.swo
 *~
 
+#.env открыли намеренно для удобства проверяющего
 # Environment variables
-.env
 .env.local
 .env.*.local
 # Но .env.example должен коммититься в репозиторий
