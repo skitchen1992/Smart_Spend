@@ -30,6 +30,12 @@ make docker-migrate  # Применить миграции БД
 
 Приложение будет доступно по адресу: http://localhost:8000
 
+### Запуск тестов Через Docker (рекомендуется):
+
+```bash
+make docker-test 
+```bash
+
 ### Локально:
 
 ```bash
