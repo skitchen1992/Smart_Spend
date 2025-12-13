@@ -14,7 +14,9 @@ class TestAuthenticateUser:
     """Тесты для authenticate_user"""
 
     @pytest.mark.asyncio
-    async def test_authenticate_user_by_username_success(self, mock_db_session, mock_user):
+    async def test_authenticate_user_by_username_success(
+        self, mock_db_session: AsyncMock, mock_user: MagicMock
+    ) -> None:
         """Успешная аутентификация по username"""
         password = "test_password_123"
         mock_user.hashed_password = get_password_hash(password)
@@ -35,7 +37,9 @@ class TestAuthenticateUser:
             )
 
     @pytest.mark.asyncio
-    async def test_authenticate_user_wrong_password(self, mock_db_session, mock_user):
+    async def test_authenticate_user_wrong_password(
+        self, mock_db_session: AsyncMock, mock_user: MagicMock
+    ) -> None:
         """Аутентификация с неверным паролем"""
         password = "test_password_123"
         wrong_password = "wrong_password"
@@ -56,7 +60,9 @@ class TestGenerateTokens:
     """Тесты для generate_tokens"""
 
     @pytest.mark.asyncio
-    async def test_generate_tokens_success(self, mock_db_session, mock_user):
+    async def test_generate_tokens_success(
+        self, mock_db_session: AsyncMock, mock_user: MagicMock
+    ) -> None:
         """Успешная генерация токенов"""
         mock_user.id = 1
         mock_user.is_active = True
@@ -76,7 +82,9 @@ class TestGenerateTokens:
             mock_repo.create.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_generate_tokens_inactive_user(self, mock_db_session, mock_inactive_user):
+    async def test_generate_tokens_inactive_user(
+        self, mock_db_session: AsyncMock, mock_inactive_user: MagicMock
+    ) -> None:
         """Генерация токенов для неактивного пользователя"""
         mock_inactive_user.id = 2
         mock_inactive_user.is_active = False
@@ -84,7 +92,7 @@ class TestGenerateTokens:
         with pytest.raises(CredentialsException) as exc_info:
             await AuthService.generate_tokens(mock_db_session, mock_inactive_user)
 
-        assert "inactive" in exc_info.value.detail.lower()
+        assert "неактивен" in exc_info.value.detail.lower()
 
 
 class TestRefreshAccessToken:
@@ -92,8 +100,11 @@ class TestRefreshAccessToken:
 
     @pytest.mark.asyncio
     async def test_refresh_access_token_success(
-        self, mock_db_session, mock_user, mock_refresh_token
-    ):
+        self,
+        mock_db_session: AsyncMock,
+        mock_user: MagicMock,
+        mock_refresh_token: MagicMock,
+    ) -> None:
         """Успешное обновление токенов"""
         mock_user.id = 1
         mock_user.is_active = True
@@ -127,21 +138,23 @@ class TestRefreshAccessToken:
             mock_repo.revoke.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_refresh_access_token_invalid_token(self, mock_db_session):
+    async def test_refresh_access_token_invalid_token(self, mock_db_session: AsyncMock) -> None:
         """Обновление токенов с невалидным токеном"""
         invalid_token = "invalid.token.here"
 
         with pytest.raises(CredentialsException) as exc_info:
             await AuthService.refresh_access_token(mock_db_session, invalid_token)
 
-        assert "invalid" in exc_info.value.detail.lower()
+        assert "недействительный" in exc_info.value.detail.lower()
 
 
 class TestGetUserFromToken:
     """Тесты для get_user_from_token"""
 
     @pytest.mark.asyncio
-    async def test_get_user_from_token_success(self, mock_db_session, mock_user):
+    async def test_get_user_from_token_success(
+        self, mock_db_session: AsyncMock, mock_user: MagicMock
+    ) -> None:
         """Успешное получение пользователя из токена"""
         payload = {"sub": mock_user.username}
         access_token = create_access_token(payload)
@@ -159,11 +172,11 @@ class TestGetUserFromToken:
             )
 
     @pytest.mark.asyncio
-    async def test_get_user_from_token_invalid_token(self, mock_db_session):
+    async def test_get_user_from_token_invalid_token(self, mock_db_session: AsyncMock) -> None:
         """Получение пользователя из невалидного токена"""
         invalid_token = "invalid.token.here"
 
         with pytest.raises(CredentialsException) as exc_info:
             await AuthService.get_user_from_token(mock_db_session, invalid_token)
 
-        assert "invalid" in exc_info.value.detail.lower()
+        assert "недействительный" in exc_info.value.detail.lower()
