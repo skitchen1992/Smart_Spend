@@ -1,5 +1,3 @@
-.PHONY: help install run dev test lint format migrate migrate-create clean stop kill-port docker-build docker-up docker-down docker-logs docker-restart docker-shell docker-migrate docker-migrate-create docker-test docker-clean
-
 help: ## Показать доступные команды
 	@echo "Доступные команды:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -54,6 +52,9 @@ migrate-create: ## Создать новую миграцию (использо�
 
 migrate-downgrade: ## Откатить последнюю миграцию
 	poetry run alembic downgrade -1
+
+migrate-test: ## Проверить миграции на чистой базе данных
+	poetry run python scripts/test_migrations.py
 
 shell: ## Активировать виртуальное окружение
 	poetry shell
