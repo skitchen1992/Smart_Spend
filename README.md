@@ -30,9 +30,12 @@ make docker-migrate  # Применить миграции БД
 
 Приложение будет доступно по адресу: http://localhost:8000
 
-### Локально:
+### Запуск тестов Через Docker (рекомендуется):
 
 ```bash
+make docker-test 
+```bash
+
 # 1. Установите Poetry (если еще не установлен)
 curl -sSL https://install.python-poetry.org | python3 -
 
