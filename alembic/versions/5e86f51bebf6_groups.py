@@ -47,6 +47,7 @@ def upgrade() -> None:
         sa.UniqueConstraint("group_id", "user_id", name="uq_group_user"),
     )
     op.create_index(op.f("ix_group_members_id"), "group_members", ["id"], unique=False)
+    op.drop_constraint("groups_name_key", "groups", type_="unique")
     # ### end Alembic commands ###
 
 
