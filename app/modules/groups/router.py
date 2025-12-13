@@ -44,6 +44,9 @@ async def create_group(
     Создать новую группу.
 
     Текущий пользователь автоматически становится владельцем созданной группы.
+
+    **Бизнес-правило:** Один пользователь может состоять только в одной группе.
+    Если пользователь уже состоит в группе, будет возвращена ошибка.
     """
     new_group = await group_service.create_group_service(
         db=db, data=data, owner_id=int(current_user.id)
@@ -71,12 +74,18 @@ async def update_group(
     return success_response(data=updated_group)
 
 
-@router.delete("/delete", response_model=StandardResponse[dict])
+@router.delete("/{group_id}", response_model=StandardResponse[dict])
 async def delete_group(
     group_id: int,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> StandardResponse[dict]:
-    """Удалить группу."""
-    await group_service.delete_group_service(db=db, group_id=group_id, id_user=int(current_user.id))
-    return success_response(data={"message": "Group deleted successfully"})
+    """
+    Удалить группу.
+
+    Только владелец группы может удалить её.
+    """
+    result = await group_service.delete_group_service(
+        db=db, group_id=group_id, id_user=int(current_user.id)
+    )
+    return success_response(data=result)

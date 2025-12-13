@@ -5,7 +5,6 @@ import io
 from datetime import datetime
 
 from fastapi import HTTPException
-from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.groups.repository import group_repository
@@ -35,15 +34,13 @@ class TransactionService:
         if transaction_in.transaction_to_group:
             # Проверяем, состоит ли пользователь в указанной группе
             group = await group_repository.get_group(
-                db=db,
-                group_id=transaction_in.transaction_to_group,
-                id_user=user_id
+                db=db, group_id=transaction_in.transaction_to_group, id_user=user_id
             )
 
             if not group:
                 raise HTTPException(
                     status_code=403,
-                    detail=f"User is not a member of group {transaction_in.transaction_to_group} or group does not exist"
+                    detail=f"Пользователь не является участником группы {transaction_in.transaction_to_group} или группа не существует",
                 )
         return await transaction_repository.create(
             db=db,
@@ -141,19 +138,17 @@ class TransactionService:
         # Проверяем, изменяется ли группа
         if transaction_in.transaction_to_group is not None:
             # Если группа меняется, проверяем доступ к новой группе
-            user_id = db_obj.user_id  # Получаем ID пользователя из существующей транзакции
+            user_id = int(db_obj.user_id)  # Получаем ID пользователя из существующей транзакции
 
             if transaction_in.transaction_to_group:
                 group = await group_repository.get_group(
-                    db=db,
-                    group_id=transaction_in.transaction_to_group,
-                    id_user=user_id
+                    db=db, group_id=transaction_in.transaction_to_group, id_user=user_id
                 )
 
                 if not group:
                     raise HTTPException(
                         status_code=403,
-                        detail=f"User is not a member of group {transaction_in.transaction_to_group}"
+                        detail=f"Пользователь не является участником группы {transaction_in.transaction_to_group}",
                     )
         return await transaction_repository.update(
             db=db,

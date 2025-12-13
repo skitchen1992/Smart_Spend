@@ -1,6 +1,7 @@
-from datetime import datetime
-from fastapi import Request, HTTPException
+from datetime import datetime, timezone
+from fastapi import Request, HTTPException, status
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import SQLAlchemyError
 from app.core.exceptions import AppException
 from app.core.dto.response import StandardResponse, ErrorDetail
 
@@ -14,7 +15,7 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
         code=exc.status_code,
         data=None,
         error=error_detail,
-        timestamp=datetime.utcnow().isoformat() + "Z",
+        timestamp=datetime.now(timezone.utc).isoformat(),
     )
 
     return JSONResponse(status_code=exc.status_code, content=response.model_dump(exclude_none=True))
@@ -29,7 +30,25 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
         code=exc.status_code,
         data=None,
         error=error_detail,
-        timestamp=datetime.utcnow().isoformat() + "Z",
+        timestamp=datetime.now(timezone.utc).isoformat(),
     )
 
     return JSONResponse(status_code=exc.status_code, content=response.model_dump(exclude_none=True))
+
+
+async def sqlalchemy_error_handler(request: Request, exc: SQLAlchemyError) -> JSONResponse:
+    """Обработчик ошибок SQLAlchemy"""
+    error_detail = ErrorDetail(message="Ошибка базы данных", code=None)
+
+    response: StandardResponse[None] = StandardResponse(
+        success=False,
+        code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        data=None,
+        error=error_detail,
+        timestamp=datetime.now(timezone.utc).isoformat(),
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content=response.model_dump(exclude_none=True),
+    )

@@ -8,6 +8,7 @@ Create Date: 2025-11-29 15:45:36.148583
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import text
 
 
 # revision identifiers, used by Alembic.
@@ -47,7 +48,23 @@ def upgrade() -> None:
         sa.UniqueConstraint("group_id", "user_id", name="uq_group_user"),
     )
     op.create_index(op.f("ix_group_members_id"), "group_members", ["id"], unique=False)
-    op.drop_constraint("groups_name_key", "groups", type_="unique")
+    # Удаляем ограничение только если оно существует
+    op.execute(
+        text(
+            """
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'groups_name_key'
+                AND conrelid = 'groups'::regclass
+            ) THEN
+                ALTER TABLE groups DROP CONSTRAINT groups_name_key;
+            END IF;
+        END $$;
+    """
+        )
+    )
     # ### end Alembic commands ###
 
 

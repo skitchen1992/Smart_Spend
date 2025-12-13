@@ -1,11 +1,11 @@
 """Тесты для app/modules/auth/router.py"""
 
-from unittest.mock import AsyncMock, patch
+from typing import Any
+from unittest.mock import AsyncMock, patch, ANY
 
-import pytest
 from fastapi import status
 
-from app.modules.auth.schemas import Login, RefreshTokenRequest
+from app.modules.auth.schemas import Login, RefreshTokenRequest, PasswordChange
 from app.modules.users.schemas import UserCreate
 from app.core.exceptions import CredentialsException
 
@@ -13,7 +13,7 @@ from app.core.exceptions import CredentialsException
 class TestRegister:
     """Тесты для POST /auth/register"""
 
-    def test_register_success(self, client, mock_user):
+    def test_register_success(self, client: Any, mock_user: Any) -> None:
         """Успешная регистрация пользователя"""
         user_data = UserCreate(
             username="newuser",
@@ -46,7 +46,7 @@ class TestRegister:
 class TestLogin:
     """Тесты для POST /auth/login"""
 
-    def test_login_success(self, client, mock_user):
+    def test_login_success(self, client: Any, mock_user: Any) -> None:
         """Успешный вход"""
         login_data = Login(username="testuser", password="test_password_123")
         tokens = {"access_token": "test_access_token", "refresh_token": "test_refresh_token"}
@@ -67,7 +67,7 @@ class TestLogin:
             mock_auth_service.authenticate_user.assert_called_once()
             mock_auth_service.generate_tokens.assert_called_once()
 
-    def test_login_invalid_credentials(self, client):
+    def test_login_invalid_credentials(self, client: Any) -> None:
         """Вход с неверными учетными данными"""
         login_data = Login(username="testuser", password="wrong_password")
 
@@ -88,7 +88,7 @@ class TestLogin:
 class TestRefreshToken:
     """Тесты для POST /auth/refresh"""
 
-    def test_refresh_token_success(self, client):
+    def test_refresh_token_success(self, client: Any) -> None:
         """Успешное обновление токенов"""
         refresh_data = RefreshTokenRequest(refresh_token="valid_refresh_token")
         new_tokens = {
@@ -112,7 +112,7 @@ class TestRefreshToken:
             assert data["data"]["refresh_token"] == "new_refresh_token"
             mock_auth_service.refresh_access_token.assert_called_once()
 
-    def test_refresh_token_invalid_token(self, client):
+    def test_refresh_token_invalid_token(self, client: Any) -> None:
         """Обновление токенов с невалидным refresh токеном"""
         refresh_data = RefreshTokenRequest(refresh_token="invalid_token")
 
@@ -125,3 +125,33 @@ class TestRefreshToken:
 
             assert response.status_code == status.HTTP_401_UNAUTHORIZED
             mock_auth_service.refresh_access_token.assert_called_once()
+
+
+class TestChangePassword:
+    """Тесты для POST /auth/change-password"""
+
+    def test_change_password_success(self, client: Any, mock_user: Any) -> None:
+        """Успешная смена пароля"""
+        password_data = PasswordChange(
+            old_password="old_password_123",
+            new_password="new_password_123",
+        )
+
+        with patch("app.modules.auth.router.user_service") as mock_user_service:
+            mock_user_service.change_password = AsyncMock(return_value=None)
+
+            response = client.post("/auth/change-password", json=password_data.model_dump())
+
+            assert response.status_code == status.HTTP_200_OK
+            data = response.json()
+            assert data["success"] is True
+            assert data["code"] == status.HTTP_200_OK
+            assert "data" in data
+            assert data["data"]["message"] == "Пароль успешно изменен"
+
+            mock_user_service.change_password.assert_called_once_with(
+                db=ANY,
+                user=mock_user,
+                old_password="old_password_123",
+                new_password="new_password_123",
+            )

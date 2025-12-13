@@ -7,14 +7,20 @@ from app.core.config import settings
 from app.core.core_module import init_db
 from app.core.db import engine
 from app.core.exceptions import AppException
-from app.core.exceptions_handler import app_exception_handler, http_exception_handler
+from app.core.exceptions_handler import (
+    app_exception_handler,
+    http_exception_handler,
+    sqlalchemy_error_handler,
+)
 from app.core.middleware import StandardResponseMiddleware
+from sqlalchemy.exc import SQLAlchemyError
 from app.modules.users.router import router as users_router
 from app.modules.groups.router import router as groups_router
 from app.modules.analytics.router import router as analytics_router
 from app.modules.auth.router import router as auth_router
 from app.modules.group_members.router import router as group_members_router
 from app.modules.transactions.router import router as transactions_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -55,6 +61,7 @@ app.add_middleware(
 # Регистрация обработчиков исключений
 app.add_exception_handler(AppException, app_exception_handler)
 app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(SQLAlchemyError, sqlalchemy_error_handler)
 
 # Подключение роутов модулей
 app.include_router(auth_router, prefix=settings.API_V1_STR)
@@ -65,10 +72,9 @@ app.include_router(analytics_router, prefix=settings.API_V1_STR)
 app.include_router(transactions_router, prefix=settings.API_V1_STR)
 
 
-
 @app.get("/")
 async def root() -> dict[str, str]:
-    return {"message": "Welcome to Smart Spend API"}
+    return {"message": "Добро пожаловать в Smart Spend API"}
 
 
 @app.get("/health")

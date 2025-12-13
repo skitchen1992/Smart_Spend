@@ -35,7 +35,7 @@ class UserService:
 
         user = await user_repository.get_by_username(db=db, username=user_in.username)
         if user:
-            raise UserAlreadyExistsException(detail="Username already registered")
+            raise UserAlreadyExistsException(detail="Имя пользователя уже зарегистрировано")
 
         hashed_password = get_password_hash(user_in.password)
 
@@ -56,10 +56,10 @@ class UserService:
         """Сменить пароль пользователя"""
         # Проверяем текущий пароль
         if not user.hashed_password:
-            raise CredentialsException(detail="Password not set for this user")
+            raise CredentialsException(detail="Пароль не установлен для этого пользователя")
 
-        if not verify_password(old_password, user.hashed_password):
-            raise CredentialsException(detail="Incorrect current password")
+        if not verify_password(old_password, str(user.hashed_password)):
+            raise CredentialsException(detail="Неверный текущий пароль")
 
         # Хэшируем новый пароль
         hashed_password = get_password_hash(new_password)

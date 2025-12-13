@@ -19,7 +19,9 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
     response_model=StandardResponse[Token],
     status_code=status.HTTP_201_CREATED,
 )
-async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
+async def register(
+    user_in: UserCreate, db: AsyncSession = Depends(get_db)
+) -> StandardResponse[Token]:
     """Регистрация нового пользователя"""
     user = await user_service.create_user(db=db, user_in=user_in)
     tokens = await auth_service.generate_tokens(db=db, user=user)
@@ -27,21 +29,23 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/login", response_model=StandardResponse[Token])
-async def login(login_data: Login, db: AsyncSession = Depends(get_db)):
+async def login(login_data: Login, db: AsyncSession = Depends(get_db)) -> StandardResponse[Token]:
     """
     Авторизация пользователя.
     Возвращает access и refresh токены.
     """
     user = await auth_service.authenticate_user(db, login_data.username, login_data.password)
     if not user:
-        raise CredentialsException(detail="Incorrect username or password")
+        raise CredentialsException(detail="Неверное имя пользователя или пароль")
 
     tokens = await auth_service.generate_tokens(db=db, user=user)
     return success_response(data=tokens)
 
 
 @router.post("/refresh", response_model=StandardResponse[Token])
-async def refresh_token(refresh_data: RefreshTokenRequest, db: AsyncSession = Depends(get_db)):
+async def refresh_token(
+    refresh_data: RefreshTokenRequest, db: AsyncSession = Depends(get_db)
+) -> StandardResponse[Token]:
     """
     Обновление токенов с помощью refresh токена.
     """
@@ -54,7 +58,7 @@ async def change_password(
     password_data: PasswordChange,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> StandardResponse[dict]:
     """
     Смена пароля пользователя.
     Требует аутентификации и проверки текущего пароля.
@@ -65,4 +69,4 @@ async def change_password(
         old_password=password_data.old_password,
         new_password=password_data.new_password,
     )
-    return success_response(data={"message": "Password changed successfully"})
+    return success_response(data={"message": "Пароль успешно изменен"})

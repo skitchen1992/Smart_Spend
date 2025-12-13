@@ -1,6 +1,7 @@
 # tests/test_groups.py
 """Тесты для app/modules/groups/router.py"""
 
+from typing import Any
 from unittest.mock import AsyncMock, patch, ANY
 
 from fastapi import status
@@ -16,7 +17,8 @@ from app.modules.groups.schemas import (
 
 class TestCreateGroup:
     """Тесты для POST /group/create (создание группы)"""
-    def test_create_group_success(self, client, mock_user):
+
+    def test_create_group_success(self, client: Any, mock_user: Any) -> None:
         """Успешное создание группы"""
         group_data = GroupCreate(name="Family budget")
 
@@ -46,7 +48,8 @@ class TestCreateGroup:
 
 class TestGroupDetails:
     """Тесты для GET /group/{group_id} (группа + участники)"""
-    def test_get_group_with_members_success(self, client, mock_user):
+
+    def test_get_group_with_members_success(self, client: Any, mock_user: Any) -> None:
         """Получение группы с участниками"""
         group_id = 1
 
@@ -84,7 +87,8 @@ class TestGroupDetails:
 
 class TestUpdateGroup:
     """Тесты для PUT /group/{group_id}/update (обновление группы)"""
-    def test_update_group_success(self, client, mock_user):
+
+    def test_update_group_success(self, client: Any, mock_user: Any) -> None:
         group_id = 1
         update_data = GroupUpdate(name="New name")
 
@@ -115,21 +119,24 @@ class TestUpdateGroup:
 
 
 class TestDeleteGroup:
-    """Тесты для DELETE /group/delete (удаление группы)"""
-    def test_delete_group_success(self, client, mock_user):
+    """Тесты для DELETE /group/{group_id} (удаление группы)"""
+
+    def test_delete_group_success(self, client: Any, mock_user: Any) -> None:
         group_id = 1
 
         with patch("app.modules.groups.router.group_service") as mock_group_service:
-            mock_group_service.delete_group_service = AsyncMock(return_value={"message": "ok"})
+            mock_group_service.delete_group_service = AsyncMock(
+                return_value={"message": "Группа успешно удалена"}
+            )
 
-            response = client.delete("/group/delete", params={"group_id": group_id})
+            response = client.delete(f"/group/{group_id}")
 
             assert response.status_code == status.HTTP_200_OK
             data = response.json()
 
             assert data["success"] is True
             assert data["code"] == status.HTTP_200_OK
-            assert data["data"]["message"] == "Group deleted successfully"
+            assert data["data"]["message"] == "Группа успешно удалена"
 
             mock_group_service.delete_group_service.assert_called_once_with(
                 db=ANY,
