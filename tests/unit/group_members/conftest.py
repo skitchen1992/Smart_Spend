@@ -1,4 +1,4 @@
-"""Фикстуры для тестов модуля auth"""
+"""Фикстуры для тестов модуля group_members"""
 
 from typing import AsyncGenerator, Any
 
@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.auth.router import router
+from app.modules.group_members.router import router
 from app.core.db import get_db
 from app.core.dependencies import get_current_user
 
@@ -26,6 +26,7 @@ def test_app(mock_db_session: Any, mock_user: Any) -> Any:
 
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = override_get_current_user
+
     yield app
     app.dependency_overrides.clear()
 

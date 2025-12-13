@@ -3,7 +3,7 @@ from sqlalchemy import select, delete, update
 from sqlalchemy.orm import selectinload
 
 from app.modules.groups.models import Group
-from app.modules.groups.models import GroupMember
+from app.modules.group_members.models import GroupMember
 from app.modules.groups.schemas import GroupCreate, GroupUpdate
 from app.shared.mixins import CRUDMixin
 from typing import Optional
@@ -62,12 +62,15 @@ class GroupRepository(CRUDMixin[Group]):
         """
         Получить список всех групп, в которых состоит пользователь.
 
+        Примечание: По бизнес-правилу один пользователь может состоять только в одной группе,
+        поэтому список всегда будет содержать 0 или 1 элемент.
+
         Args:
             db (AsyncSession): Асинхронная сессия БД.
             user_id (int): ID пользователя.
 
         Returns:
-            list[Group]: Список групп, загруженных со списками участников.
+            list[Group]: Список групп (0 или 1 элемент), загруженных со списками участников.
         """
         stmt = (
             select(Group)
@@ -86,13 +89,14 @@ class GroupRepository(CRUDMixin[Group]):
         Args:
             db (AsyncSession): Асинхронная сессия БД.
             data (GroupCreate): Pydantic-схема с данными для создания группы.
+            owner_id (int): ID владельца группы.
 
         Returns:
-            Group: Созданный объект группы.
+            Group: Созданный объект группы (еще не закоммиченный).
         """
         group = Group(name=data.name, owner_id=owner_id)
         db.add(group)
-        await db.commit()
+        await db.flush()  # Получаем ID, но не коммитим - commit будет в сервисе
         return group
 
     async def update_group(
@@ -130,7 +134,7 @@ class GroupRepository(CRUDMixin[Group]):
 
         # Выполняем обновление
         await db.execute(update(Group).where(Group.id == group_id).values(**update_data))
-        await db.commit()
+        await db.flush()  # Применяем изменения, но не коммитим - commit будет в сервисе
 
         # Получаем обновлённую группу
         updated_group = await self.get_with_members(db, group_id)
@@ -165,8 +169,8 @@ class GroupRepository(CRUDMixin[Group]):
 
         # Удаляем саму группу
         await db.execute(delete(Group).where(Group.id == group_id))
+        await db.flush()  # Применяем изменения, но не коммитим - commit будет в сервисе
 
-        await db.commit()
         return True
 
 
