@@ -34,7 +34,7 @@ make docker-migrate  # Применить миграции БД
 
 ```bash
 make docker-test 
-```bash
+```
 
 ### Локально:
 
